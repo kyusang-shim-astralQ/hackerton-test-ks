@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>CP2K Agent · Concept A · Lab Paper</title>
+<style>
+  /* ============================================================
+     Lab Paper — visual identity
+     Paper background, near-black ink, ONE restrained accent.
+     Flat surfaces, 1px hairlines, near-zero shadow, serif headings.
+     No glassmorphism, no blur, no dark, no gradients.
+     ============================================================ */
+  :root{
+    --paper:        #f6f5f1;   /* page paper */
+    --paper-card:   #fbfbf9;   /* raised paper surface */
+    --paper-inset:  #f0efe9;   /* inset wells */
+    --ink:          #1b1b1a;   /* near-black text */
+    --ink-soft:     #54524c;   /* secondary text */
+    --ink-faint:    #8c8a82;   /* tertiary / labels */
+    --hairline:     #e6e4dd;   /* 1px borders */
+    --hairline-2:   #d8d6cd;   /* stronger rule */
+    --accent:       #36367a;   /* deep indigo — the only accent */
+    --accent-wash:  #ececf4;   /* faint accent tint */
+    --accent-ink:   #2a2a63;
+    --ok:           #3a5f3a;   /* muted ink-green for "done" */
+    --warn:         #7a2e2e;   /* oxblood, used sparingly */
+    --mono: ui-monospace, "SFMono-Regular", "Cascadia Mono", "Consolas", monospace;
+    --serif: Georgia, "Times New Roman", "Noto Serif KR", serif;
+    --sans: system-ui, -apple-system, "Segoe UI", "Malgun Gothic", "Apple SD Gothic Neo", sans-serif;
+  }
+
+  *{ box-sizing:border-box; }
+  html,body{ height:100%; margin:0; }
+  body{
+    font-family:var(--sans);
+    color:var(--ink);
+    background:var(--paper);
+    /* faint paper texture: very subtle ruled feel, no images */
+    background-image:linear-gradient(var(--paper), var(--paper));
+    font-size:14px;
+    line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  /* ---- Concept ribbon ---- */
+  .ribbon{
+    position:fixed; top:0; left:0; z-index:50;
+    font-family:var(--mono);
+    font-size:10.5px; letter-spacing:.06em;
+    color:var(--accent-ink);
+    background:var(--accent-wash);
+    border-right:1px solid var(--hairline-2);
+    border-bottom:1px solid var(--hairline-2);
+    padding:5px 12px;
+    text-transform:uppercase;
+  }
+
+  /* ============================================================
+     FIXED LAYOUT — 3 zones, 100vh. DO NOT change geometry.
+     ============================================================ */
+  .app{
+    display:grid;
+    grid-template-columns:280px 1fr 300px;
+    height:100vh;
+    width:100%;
+  }
+
+  /* ---------- LEFT : step rail ---------- */
+  .rail{
+    border-right:1px solid var(--hairline);
+    background:var(--paper-card);
+    padding:26px 22px;
+    display:flex; flex-direction:column;
+    overflow-y:auto;
+  }
+  .brand{
+    padding-bottom:20px; margin-bottom:8px;
+    border-bottom:1px solid var(--hairline);
+  }
+  .brand .mark{
+    display:flex; align-items:baseline; gap:8px;
+  }
+  .brand .glyph{
+    font-family:var(--serif);
+    font-weight:700; font-size:20px;
+    border:1px solid var(--ink);
+    width:30px; height:30px;
+    display:inline-flex; align-items:center; justify-content:center;
+    line-height:1;
+  }
+  .brand .title{
+    font-family:var(--serif);
+    font-size:18px; font-weight:700; letter-spacing:.01em;
+  }
+  .brand .sub{
+    margin-top:6px;
+    font-family:var(--mono); font-size:10.5px;
+    color:var(--ink-faint); letter-spacing:.04em;
+  }
+
+  .rail-label{
+    margin:22px 0 10px;
+    font-family:var(--mono); font-size:10px; letter-spacing:.16em;
+    text-transform:uppercase; color:var(--ink-faint);
+  }
+
+  .steps{ list-style:none; margin:0; padding:0; }
+  .step{
+    display:grid;
+    grid-template-columns:26px 1fr;
+    gap:11px;
+    align-items:start;
+    padding:11px 12px;
+    margin:1px 0;
+    border:1px solid transparent;
+    cursor:pointer;
+    position:relative;
+  }
+  .step:hover{ background:var(--paper-inset); }
+  .step.active{
+    background:var(--paper);
+    border-color:var(--hairline-2);
+  }
+  /* accent spine on active */
+  .step.active::before{
+    content:""; position:absolute; left:-1px; top:-1px; bottom:-1px;
+    width:2px; background:var(--accent);
+  }
+  .step .badge{
+    width:24px; height:24px;
+    border-radius:50%;
+    border:1px solid var(--hairline-2);
+    display:flex; align-items:center; justify-content:center;
+    font-family:var(--mono); font-size:11px;
+    color:var(--ink-soft);
+    background:var(--paper-card);
+  }
+  .step.done .badge{ border-color:var(--ok); color:var(--ok); }
+  .step.current .badge{
+    border-color:var(--accent); color:#fff; background:var(--accent);
+  }
+  .step.locked{ opacity:.55; }
+  .step .name{ font-size:13.5px; font-weight:600; color:var(--ink); }
+  .step.locked .name{ font-weight:500; }
+  .step .meta{
+    margin-top:2px;
+    font-family:var(--mono); font-size:10.5px; color:var(--ink-faint);
+  }
+
+  .rail-foot{
+    margin-top:auto; padding-top:18px;
+    border-top:1px solid var(--hairline);
+    font-family:var(--mono); font-size:10px; color:var(--ink-faint);
+    letter-spacing:.03em;
+  }
+
+  /* ---------- CENTER : workspace ---------- */
+  .work{
+    display:flex; flex-direction:column;
+    overflow:hidden;
+    background:var(--paper);
+  }
+  .work-head{
+    flex:0 0 auto;
+    padding:26px 40px 20px;
+    border-bottom:1px solid var(--hairline);
+    background:var(--paper);
+    display:flex; align-items:flex-start; gap:20px;
+  }
+  .work-head .h-text{ flex:1; min-width:0; }
+  .work-head h1{
+    font-family:var(--serif);
+    font-size:25px; font-weight:700; margin:0;
+    letter-spacing:.005em;
+  }
+  .work-head .desc{
+    margin-top:6px; color:var(--ink-soft); font-size:13px; max-width:60ch;
+  }
+  .work-head .nav{
+    display:flex; align-items:center; gap:8px; flex:0 0 auto;
+    padding-top:4px;
+  }
+  .pill{
+    font-family:var(--mono); font-size:11px;
+    border:1px solid var(--hairline-2);
+    padding:6px 11px;
+    color:var(--ink-soft);
+    letter-spacing:.04em;
+    white-space:nowrap;
+  }
+  .btn{
+    font-family:var(--sans); font-size:12.5px; font-weight:600;
+    border:1px solid var(--ink);
+    background:var(--paper-card);
+    color:var(--ink);
+    padding:7px 14px;
+    cursor:pointer;
+  }
+  .btn:hover{ background:var(--ink); color:var(--paper); }
+  .btn:disabled{ opacity:.35; cursor:not-allowed; }
+  .btn:disabled:hover{ background:var(--paper-card); color:var(--ink); }
+  .btn.primary{ border-color:var(--accent); background:var(--accent); color:#fff; }
+  .btn.primary:hover{ background:var(--accent-ink); }
+  .btn.danger{ border-color:var(--warn); color:var(--warn); background:var(--paper-card); }
+  .btn.danger:hover{ background:var(--warn); color:#fff; }
+
+  .work-body{
+    flex:1 1 auto; overflow-y:auto;
+    padding:32px 40px 48px;
+  }
+  .panel{ display:none; max-width:880px; }
+  .panel.show{ display:block; }
+
+  .section-h{
+    font-family:var(--mono); font-size:10.5px; letter-spacing:.16em;
+    text-transform:uppercase; color:var(--ink-faint);
+    margin:0 0 14px;
+    padding-bottom:8px; border-bottom:1px solid var(--hairline);
+  }
+
+  /* generic card / well */
+  .card{
+    background:var(--paper-card);
+    border:1px solid var(--hairline);
+    padding:22px 24px;
+    margin-bottom:22px;
+  }
+
+  /* ---- Step 1: dropzone ---- */
+  .dropzone{
+    border:1px dashed var(--hairline-2);
+    background:var(--paper-inset);
+    padding:34px 24px; text-align:center;
+    color:var(--ink-soft);
+  }
+  .dropzone .big{ font-family:var(--serif); font-size:17px; color:var(--ink); }
+  .dropzone .small{ font-family:var(--mono); font-size:11px; color:var(--ink-faint); margin-top:6px; }
+  .filechip{
+    display:inline-flex; align-items:center; gap:10px;
+    margin-top:18px;
+    border:1px solid var(--hairline-2);
+    background:var(--paper-card);
+    padding:8px 12px;
+    font-family:var(--mono); font-size:12px;
+  }
+  .filechip .dot{ width:7px; height:7px; background:var(--ok); border-radius:50%; }
+  .filechip .x{ color:var(--ink-faint); cursor:pointer; padding-left:4px; }
+
+  /* metadata table */
+  .meta-grid{
+    display:grid; grid-template-columns:repeat(2,1fr);
+    border:1px solid var(--hairline);
+    border-bottom:none;
+  }
+  .meta-grid .cell{
+    border-bottom:1px solid var(--hairline);
+    padding:13px 16px;
+  }
+  .meta-grid .cell:nth-child(odd){ border-right:1px solid var(--hairline); }
+  .meta-grid .k{
+    font-family:var(--mono); font-size:10px; letter-spacing:.1em;
+    text-transform:uppercase; color:var(--ink-faint);
+  }
+  .meta-grid .v{
+    font-family:var(--serif); font-size:16px; margin-top:3px; color:var(--ink);
+  }
+  .meta-grid .v small{ font-family:var(--mono); font-size:11px; color:var(--ink-soft); }
+
+  .lattice{
+    font-family:var(--mono); font-size:12px; color:var(--ink-soft);
+    line-height:1.8;
+  }
+
+  /* ---- Step 3: DFT form ---- */
+  .form-grid{
+    display:grid; grid-template-columns:repeat(2, minmax(0,1fr));
+    gap:18px 28px;
+  }
+  .field label{
+    display:block;
+    font-family:var(--mono); font-size:10px; letter-spacing:.12em;
+    text-transform:uppercase; color:var(--ink-faint);
+    margin-bottom:6px;
+  }
+  .field .control{
+    width:100%;
+    border:1px solid var(--hairline-2);
+    background:var(--paper);
+    padding:9px 12px;
+    font-family:var(--sans); font-size:13.5px; color:var(--ink);
+    appearance:none;
+  }
+  .field .control:focus{ outline:none; border-color:var(--accent); }
+  .field .hint{
+    margin-top:5px; font-family:var(--mono); font-size:10.5px; color:var(--ink-faint);
+  }
+  .seg{ display:flex; border:1px solid var(--hairline-2); }
+  .seg button{
+    flex:1; border:none; background:var(--paper);
+    padding:9px 0; cursor:pointer;
+    font-family:var(--mono); font-size:12px; color:var(--ink-soft);
+    border-right:1px solid var(--hairline-2);
+  }
+  .seg button:last-child{ border-right:none; }
+  .seg button.on{ background:var(--accent); color:#fff; }
+
+  /* ---- Step 5: terminal + chart ---- */
+  .term{
+    background:#fbfbf9;
+    border:1px solid var(--hairline-2);
+    padding:14px 16px;
+    font-family:var(--mono); font-size:11.5px; line-height:1.75;
+    color:var(--ink-soft);
+    max-height:200px; overflow-y:auto;
+  }
+  .term .ts{ color:var(--ink-faint); }
+  .term .ac{ color:var(--accent); }
+  .term .ok{ color:var(--ok); }
+  .term .wn{ color:var(--warn); }
+  .chart-wrap{
+    display:grid; grid-template-columns:1fr 1fr; gap:22px;
+  }
+  .chart{
+    border:1px solid var(--hairline); background:var(--paper-card);
+    padding:16px;
+  }
+  .chart .cap{
+    font-family:var(--mono); font-size:10px; letter-spacing:.12em;
+    text-transform:uppercase; color:var(--ink-faint); margin-bottom:10px;
+  }
+  .chart svg{ display:block; width:100%; height:auto; }
+  .live{
+    display:inline-flex; align-items:center; gap:7px;
+    font-family:var(--mono); font-size:11px; color:var(--warn);
+  }
+  .live .blip{ width:8px; height:8px; border-radius:50%; background:var(--warn);
+    animation:pulse 1.4s infinite; }
+  @keyframes pulse{ 0%,100%{opacity:1;} 50%{opacity:.25;} }
+
+  /* ---- generic plan / list rows ---- */
+  .plan-row{
+    display:grid; grid-template-columns:30px 1fr auto; gap:14px;
+    align-items:center;
+    padding:14px 0; border-bottom:1px solid var(--hairline);
+  }
+  .plan-row:last-child{ border-bottom:none; }
+  .plan-row .num{
+    font-family:var(--serif); font-size:18px; color:var(--accent);
+    text-align:center;
+  }
+  .plan-row .lbl{ font-weight:600; }
+  .plan-row .sub{ font-family:var(--mono); font-size:11px; color:var(--ink-faint); margin-top:2px; }
+  .tag{
+    font-family:var(--mono); font-size:10px; letter-spacing:.08em;
+    border:1px solid var(--hairline-2); padding:3px 8px; color:var(--ink-soft);
+    text-transform:uppercase;
+  }
+  .prose p{ color:var(--ink-soft); max-width:64ch; }
+
+  /* checkbox list (step 2) */
+  .opt-list{ list-style:none; margin:0; padding:0; }
+  .opt-list li{
+    display:flex; align-items:center; gap:12px;
+    padding:13px 0; border-bottom:1px solid var(--hairline);
+  }
+  .opt-list li:last-child{ border-bottom:none; }
+  .chk{
+    width:18px; height:18px; border:1px solid var(--hairline-2);
+    display:inline-flex; align-items:center; justify-content:center;
+    font-size:11px; color:#fff; flex:0 0 auto;
+  }
+  .chk.on{ background:var(--accent); border-color:var(--accent); }
+  .opt-list .o-name{ font-weight:600; }
+  .opt-list .o-sub{ font-family:var(--mono); font-size:11px; color:var(--ink-faint); }
+
+  /* ---------- RIGHT : summary ---------- */
+  .summary{
+    border-left:1px solid var(--hairline);
+    background:var(--paper-card);
+    padding:26px 22px;
+    overflow-y:auto;
+  }
+  .summary h2{
+    font-family:var(--mono); font-size:10px; letter-spacing:.16em;
+    text-transform:uppercase; color:var(--ink-faint);
+    margin:0 0 18px; padding-bottom:10px; border-bottom:1px solid var(--hairline);
+  }
+  .sum-block{ margin-bottom:22px; }
+  .sum-block .lab{
+    font-family:var(--mono); font-size:10px; letter-spacing:.1em;
+    text-transform:uppercase; color:var(--ink-faint); margin-bottom:5px;
+  }
+  .sum-block .val{ font-family:var(--serif); font-size:16px; color:var(--ink); }
+  .sum-block .val small{ font-family:var(--mono); font-size:11px; color:var(--ink-soft); display:block; margin-top:3px; }
+  .sum-kv{ font-family:var(--mono); font-size:12px; color:var(--ink-soft); line-height:1.9; }
+  .sum-kv b{ color:var(--ink); font-weight:600; }
+
+  .progress-head{ display:flex; justify-content:space-between; align-items:baseline; margin-bottom:8px; }
+  .progress-head .pct{ font-family:var(--serif); font-size:20px; color:var(--accent); }
+  .bar{ height:6px; background:var(--paper-inset); border:1px solid var(--hairline-2); }
+  .bar > span{ display:block; height:100%; background:var(--accent); width:0; transition:width .35s ease; }
+  .sum-foot{
+    margin-top:24px; padding-top:16px; border-top:1px solid var(--hairline);
+    font-family:var(--mono); font-size:10px; color:var(--ink-faint); line-height:1.7;
+  }
+</style>
+</head>
+<body>
+  <div class="ribbon">Concept A · Lab Paper (정적 데모)</div>
+
+  <div class="app">
+
+    <!-- ================= LEFT : RAIL ================= -->
+    <aside class="rail">
+      <div class="brand">
+        <div class="mark">
+          <span class="glyph">Q</span>
+          <span class="title">AstralQ · CP2K</span>
+        </div>
+        <div class="sub">DFT Simulation Agent</div>
+      </div>
+
+      <div class="rail-label">워크플로</div>
+      <ul class="steps" id="steps">
+        <li class="step done"    data-step="1"><span class="badge">✓</span><div><div class="name">구조 선택</div><div class="meta">TiO₂_anatase · CIF</div></div></li>
+        <li class="step current" data-step="2"><span class="badge">●</span><div><div class="name">물성 선택</div><div class="meta">Band · DOS · TDDFT</div></div></li>
+        <li class="step locked"  data-step="3"><span class="badge">○</span><div><div class="name">옵션 설정</div><div class="meta">PBE / DZVP / 400Ry</div></div></li>
+        <li class="step locked"  data-step="4"><span class="badge">○</span><div><div class="name">플랜 확인</div><div class="meta">GeomOpt→SCF→Band</div></div></li>
+        <li class="step locked"  data-step="5"><span class="badge">○</span><div><div class="name">계산 / 모니터</div><div class="meta">SCF 실시간 수렴</div></div></li>
+        <li class="step locked"  data-step="6"><span class="badge">○</span><div><div class="name">리포트</div><div class="meta">결과 · 내보내기</div></div></li>
+      </ul>
+
+      <div class="rail-foot">
+        project · ti-o2-anatase-001<br/>
+        engine · CP2K v2024.1<br/>
+        queue · local / 8 cores
+      </div>
+    </aside>
+
+    <!-- ================= CENTER : WORKSPACE ================= -->
+    <main class="work">
+      <header class="work-head">
+        <div class="h-text">
+          <h1 id="wTitle">물성 선택</h1>
+          <div class="desc" id="wDesc">계산할 물리량을 선택합니다. 선택에 따라 후속 플랜과 옵션이 자동 구성됩니다.</div>
+        </div>
+        <div class="nav">
+          <button class="btn" id="btnPrev">이전</button>
+          <button class="btn" id="btnNext">다음</button>
+          <span class="pill" id="counter">2 / 6</span>
+        </div>
+      </header>
+
+      <div class="work-body">
+
+        <!-- ---------- PANEL 1 : 구조 선택 ---------- -->
+        <section class="panel" data-panel="1">
+          <div class="section-h">구조 입력 · Structure Input</div>
+          <div class="card">
+            <div class="dropzone">
+              <div class="big">CIF 파일을 여기에 드롭하세요</div>
+              <div class="small">.cif · .xyz · POSCAR — 최대 10 MB / 단일 셀</div>
+              <div class="filechip">
+                <span class="dot"></span>
+                TiO2_anatase.cif
+                <span style="color:var(--ink-faint)">· 4.2 KB</span>
+                <span class="x" title="제거">✕</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="section-h">구조 메타데이터 · Parsed Metadata</div>
+          <div class="meta-grid">
+            <div class="cell"><div class="k">화학식</div><div class="v">TiO₂ <small>anatase, I4₁/amd</small></div></div>
+            <div class="cell"><div class="k">구성 원소</div><div class="v">Ti, O</div></div>
+            <div class="cell"><div class="k">원자 수</div><div class="v">30 <small>atoms / cell</small></div></div>
+            <div class="cell"><div class="k">k-point mesh</div><div class="v">6 × 6 × 6</div></div>
+            <div class="cell" style="grid-column:1 / -1; border-right:none;">
+              <div class="k">격자 상수 · Lattice</div>
+              <div class="lattice">
+                a = 3.7845 Å&nbsp;&nbsp; b = 3.7845 Å&nbsp;&nbsp; c = 9.5143 Å<br/>
+                α = 90.0°&nbsp;&nbsp; β = 90.0°&nbsp;&nbsp; γ = 90.0°&nbsp;&nbsp;·&nbsp;&nbsp; V = 136.25 Å³
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ---------- PANEL 2 : 물성 선택 ---------- -->
+        <section class="panel" data-panel="2">
+          <div class="section-h">계산 물성 · Target Properties</div>
+          <div class="card">
+            <ul class="opt-list">
+              <li><span class="chk on">✓</span><div><div class="o-name">Band Structure</div><div class="o-sub">고대칭 경로 Γ–X–M–Γ–Z</div></div></li>
+              <li><span class="chk on">✓</span><div><div class="o-name">Density of States (DOS)</div><div class="o-sub">total + projected (Ti-d, O-p)</div></div></li>
+              <li><span class="chk on">✓</span><div><div class="o-name">TDDFT 광흡수 스펙트럼</div><div class="o-sub">optical gap · 첫 20 여기 상태</div></div></li>
+              <li><span class="chk">&nbsp;</span><div><div class="o-name">Phonon / 진동 모드</div><div class="o-sub">유한 변위 (선택 안 됨)</div></div></li>
+            </ul>
+          </div>
+          <div class="prose"><p>선택한 3개 물성에 맞춰 플랜이 GeomOpt → SCF → Band → DOS → TDDFT 순으로 구성됩니다.</p></div>
+        </section>
+
+        <!-- ---------- PANEL 3 : 옵션 설정 ---------- -->
+        <section class="panel" data-panel="3">
+          <div class="section-h">DFT 계산 옵션 · SCF Parameters</div>
+          <div class="card">
+            <div class="form-grid">
+              <div class="field">
+                <label>Basis Set</label>
+                <select class="control"><option>DZVP-MOLOPT-SR-GTH</option><option>TZVP-MOLOPT-GTH</option><option>SZV-MOLOPT-GTH</option></select>
+                <div class="hint">기본값 · 정확도/속도 균형</div>
+              </div>
+              <div class="field">
+                <label>Plane-wave Cutoff</label>
+                <input class="control" value="400 Ry" />
+                <div class="hint">REL_CUTOFF 60 Ry · NGRIDS 5</div>
+              </div>
+              <div class="field">
+                <label>Exchange–Correlation</label>
+                <select class="control"><option>PBE</option><option>PBE0 (hybrid)</option><option>BLYP</option><option>SCAN</option></select>
+                <div class="hint">GGA · pseudopotential GTH-PBE</div>
+              </div>
+              <div class="field">
+                <label>EPS_SCF (수렴 임계)</label>
+                <input class="control" value="1e-6" />
+                <div class="hint">전자 밀도 수렴 기준</div>
+              </div>
+              <div class="field" style="grid-column:1 / -1;">
+                <label>SCF Solver</label>
+                <div class="seg">
+                  <button class="on">OT (Orbital Transformation)</button>
+                  <button>Diagonalization + Mixing</button>
+                </div>
+                <div class="hint">OT · MINIMIZER CG · PRECONDITIONER FULL_SINGLE_INVERSE</div>
+              </div>
+            </div>
+            <div style="margin-top:24px; display:flex; gap:12px; align-items:center;">
+              <button class="btn primary" id="btnAiPlan">AI 플랜 생성</button>
+              <span class="hint" style="font-family:var(--mono); font-size:11px; color:var(--ink-faint);">선택한 옵션으로 최적 실행 플랜을 제안합니다</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- ---------- PANEL 4 : 플랜 확인 ---------- -->
+        <section class="panel" data-panel="4">
+          <div class="section-h">실행 플랜 · Execution Plan</div>
+          <div class="card">
+            <div class="plan-row"><div class="num">1</div><div><div class="lbl">GeomOpt</div><div class="sub">BFGS · max 50 steps · force &lt; 4.5e-4 a.u.</div></div><span class="tag">~12 min</span></div>
+            <div class="plan-row"><div class="num">2</div><div><div class="lbl">SCF (single point)</div><div class="sub">PBE / DZVP / 400 Ry · OT</div></div><span class="tag">~4 min</span></div>
+            <div class="plan-row"><div class="num">3</div><div><div class="lbl">Band Structure</div><div class="sub">Γ–X–M–Γ–Z · 40 k-pts/segment</div></div><span class="tag">~7 min</span></div>
+            <div class="plan-row"><div class="num">4</div><div><div class="lbl">DOS</div><div class="sub">total + PDOS (Ti-d, O-p)</div></div><span class="tag">~3 min</span></div>
+            <div class="plan-row"><div class="num">5</div><div><div class="lbl">TDDFT</div><div class="sub">20 states · Tamm-Dancoff</div></div><span class="tag">~18 min</span></div>
+          </div>
+          <div class="prose"><p>총 5단계 · 예상 소요 ~44분. 각 단계는 직전 단계의 수렴된 밀도를 재사용합니다.</p></div>
+        </section>
+
+        <!-- ---------- PANEL 5 : 계산 / 모니터 ---------- -->
+        <section class="panel" data-panel="5">
+          <div class="section-h" style="display:flex; justify-content:space-between; align-items:center;">
+            <span>실시간 모니터 · Live Monitor</span>
+            <span class="live"><span class="blip"></span>SCF 진행 중 — step 27</span>
+          </div>
+
+          <div class="card" style="padding:16px;">
+            <div class="term" id="term">
+              <div><span class="ts">[00:04:12]</span> <span class="ac">CP2K|</span> Starting SCF — PBE / DZVP / 400 Ry / OT</div>
+              <div><span class="ts">[00:04:18]</span> step 22 &nbsp; ΔE = -3.41e-04 &nbsp; convergence 2.7e-05</div>
+              <div><span class="ts">[00:04:24]</span> step 24 &nbsp; ΔE = -9.02e-05 &nbsp; convergence 8.1e-06</div>
+              <div><span class="ts">[00:04:31]</span> step 26 &nbsp; ΔE = -2.18e-05 &nbsp; convergence 3.4e-06</div>
+              <div><span class="ts">[00:04:37]</span> step 27 &nbsp; ΔE = -1.05e-05 &nbsp; convergence <span class="wn">1.9e-06</span> &nbsp; <span class="ts">(target 1e-6)</span></div>
+              <div><span class="ts">[00:04:37]</span> <span class="ok">OK|</span> total energy = -1342.88571 a.u.</div>
+            </div>
+          </div>
+
+          <div class="chart-wrap">
+            <div class="chart">
+              <div class="cap">SCF Convergence (log scale)</div>
+              <svg viewBox="0 0 260 140" preserveAspectRatio="none" aria-label="SCF convergence">
+                <line x1="30" y1="10" x2="30" y2="120" stroke="#d8d6cd" stroke-width="1"/>
+                <line x1="30" y1="120" x2="250" y2="120" stroke="#d8d6cd" stroke-width="1"/>
+                <line x1="30" y1="48"  x2="250" y2="48"  stroke="#efeee8" stroke-width="1"/>
+                <line x1="30" y1="84"  x2="250" y2="84"  stroke="#efeee8" stroke-width="1"/>
+                <polyline fill="none" stroke="#36367a" stroke-width="1.8"
+                  points="30,18 52,30 74,42 96,52 118,66 140,74 162,86 184,96 206,104 228,112 250,116"/>
+                <circle cx="250" cy="116" r="2.6" fill="#36367a"/>
+              </svg>
+            </div>
+            <div class="chart">
+              <div class="cap">Total Energy (a.u.)</div>
+              <svg viewBox="0 0 260 140" preserveAspectRatio="none" aria-label="total energy">
+                <line x1="30" y1="10" x2="30" y2="120" stroke="#d8d6cd" stroke-width="1"/>
+                <line x1="30" y1="120" x2="250" y2="120" stroke="#d8d6cd" stroke-width="1"/>
+                <line x1="30" y1="48"  x2="250" y2="48"  stroke="#efeee8" stroke-width="1"/>
+                <line x1="30" y1="84"  x2="250" y2="84"  stroke="#efeee8" stroke-width="1"/>
+                <polyline fill="none" stroke="#7a2e2e" stroke-width="1.8"
+                  points="30,28 52,58 74,84 96,98 118,106 140,110 162,112 184,113 206,113 228,114 250,114"/>
+                <circle cx="250" cy="114" r="2.6" fill="#7a2e2e"/>
+              </svg>
+            </div>
+          </div>
+
+          <div style="margin-top:22px; display:flex; gap:12px;">
+            <button class="btn danger">STOP — 계산 중단</button>
+            <button class="btn">로그 전체 보기</button>
+          </div>
+        </section>
+
+        <!-- ---------- PANEL 6 : 리포트 ---------- -->
+        <section class="panel" data-panel="6">
+          <div class="section-h">결과 리포트 · Results</div>
+          <div class="meta-grid">
+            <div class="cell"><div class="k">Band Gap (PBE)</div><div class="v">2.18 <small>eV · indirect</small></div></div>
+            <div class="cell"><div class="k">Optical Gap (TDDFT)</div><div class="v">3.21 <small>eV</small></div></div>
+            <div class="cell"><div class="k">Total Energy</div><div class="v">-1342.886 <small>a.u.</small></div></div>
+            <div class="cell"><div class="k">Fermi Level</div><div class="v">-3.94 <small>eV</small></div></div>
+          </div>
+          <div style="margin-top:22px; display:flex; gap:12px;">
+            <button class="btn primary">PDF 리포트 내보내기</button>
+            <button class="btn">원시 데이터 (.tar.gz)</button>
+          </div>
+        </section>
+
+      </div>
+    </main>
+
+    <!-- ================= RIGHT : SUMMARY ================= -->
+    <aside class="summary">
+      <h2>요약 · Summary</h2>
+
+      <div class="sum-block">
+        <div class="lab">구조</div>
+        <div class="val">TiO₂_anatase <small>30 atoms · Ti, O · 6×6×6 k-pts</small></div>
+      </div>
+
+      <div class="sum-block">
+        <div class="lab">물성</div>
+        <div class="sum-kv">
+          <b>Band</b> · <b>DOS</b> · <b>TDDFT</b>
+        </div>
+      </div>
+
+      <div class="sum-block">
+        <div class="lab">핵심 옵션</div>
+        <div class="sum-kv">
+          Functional &nbsp;<b>PBE</b><br/>
+          Basis &nbsp;<b>DZVP</b><br/>
+          Cutoff &nbsp;<b>400 Ry</b><br/>
+          SCF &nbsp;<b>OT</b> · EPS <b>1e-6</b>
+        </div>
+      </div>
+
+      <div class="sum-block">
+        <div class="lab">진행</div>
+        <div class="progress-head">
+          <span class="sum-kv" id="progLabel">2 / 6 단계</span>
+          <span class="pct" id="progPct">33%</span>
+        </div>
+        <div class="bar"><span id="progBar" style="width:33%"></span></div>
+      </div>
+
+      <div class="sum-foot">
+        last saved · 2026-06-15 09:41<br/>
+        autosave · enabled<br/>
+        agent · planner+executor
+      </div>
+    </aside>
+
+  </div>
+
+<script>
+(function(){
+  "use strict";
+  var TITLES = {
+    1:["구조 선택","CIF 또는 좌표 파일을 업로드하고 파싱된 구조 메타데이터를 확인합니다."],
+    2:["물성 선택","계산할 물리량을 선택합니다. 선택에 따라 후속 플랜과 옵션이 자동 구성됩니다."],
+    3:["옵션 설정","DFT 계산 파라미터를 지정하고 AI 플랜 생성을 실행합니다."],
+    4:["플랜 확인","에이전트가 제안한 단계별 실행 플랜과 예상 소요 시간을 검토합니다."],
+    5:["계산 / 모니터","SCF 수렴과 에너지 추이를 실시간으로 모니터링합니다."],
+    6:["리포트","수렴된 결과를 요약하고 리포트/원시 데이터를 내보냅니다."]
+  };
+  var current = 2, total = 6;
+  var steps = document.querySelectorAll('.step');
+  var panels = document.querySelectorAll('.panel');
+
+  function render(){
+    // panels
+    panels.forEach(function(p){ p.classList.toggle('show', +p.dataset.panel === current); });
+    // header
+    document.getElementById('wTitle').textContent = TITLES[current][0];
+    document.getElementById('wDesc').textContent  = TITLES[current][1];
+    document.getElementById('counter').textContent = current + ' / ' + total;
+    // rail states: < current => done, == current => current, > current => locked
+    steps.forEach(function(s){
+      var n = +s.dataset.step;
+      s.classList.remove('done','current','locked','active');
+      if(n < current){ s.classList.add('done'); s.querySelector('.badge').textContent='✓'; }
+      else if(n === current){ s.classList.add('current','active'); s.querySelector('.badge').textContent='●'; }
+      else { s.classList.add('locked'); s.querySelector('.badge').textContent='○'; }
+    });
+    // progress
+    var pct = Math.round((current/total)*100);
+    document.getElementById('progLabel').textContent = current + ' / ' + total + ' 단계';
+    document.getElementById('progPct').textContent = pct + '%';
+    document.getElementById('progBar').style.width = pct + '%';
+    // nav buttons
+    document.getElementById('btnPrev').disabled = (current === 1);
+    document.getElementById('btnNext').disabled = (current === total);
+  }
+
+  steps.forEach(function(s){
+    s.addEventListener('click', function(){ current = +s.dataset.step; render(); });
+  });
+  document.getElementById('btnPrev').addEventListener('click', function(){ if(current>1){current--; render();} });
+  document.getElementById('btnNext').addEventListener('click', function(){ if(current<total){current++; render();} });
+  document.getElementById('btnAiPlan').addEventListener('click', function(){ current = 4; render(); });
+
+  render();
+})();
+</script>
+</body>
+</html>

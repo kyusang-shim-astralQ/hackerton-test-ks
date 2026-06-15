@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>CP2K Agent · Premium Ink</title>
+<style>
+  /* ============================================================
+     Premium Ink — refined dark identity
+     Deep ink navy, single vivid emerald accent, sharp 1px borders,
+     restrained depth (no heavy glass blur), strong type hierarchy.
+     ============================================================ */
+  :root{
+    --ink-900:#0a0e1a;   /* app background */
+    --ink-800:#0e1424;   /* deep recess */
+    --panel:#141a2c;     /* panel surface */
+    --panel-2:#19203400; /* (transparent helper) */
+    --panel-rise:#1b2236;/* raised cell */
+    --line:#252d44;      /* 1px borders */
+    --line-soft:#1d2438; /* subtle dividers */
+    --txt:#eef2fb;       /* primary text */
+    --txt-2:#aeb8d0;     /* secondary text */
+    --txt-3:#6f7a96;     /* tertiary / muted */
+    --accent:#10b981;    /* emerald — the single vivid accent */
+    --accent-soft:#0f3d31;
+    --accent-line:#1f6f57;
+    --warn:#f5b454;
+    --danger:#f3685f;
+    --shadow:0 1px 0 rgba(255,255,255,.02), 0 18px 40px -28px rgba(0,0,0,.9);
+    --radius:10px;
+    --radius-sm:7px;
+    --mono:"SF Mono",ui-monospace,"Cascadia Mono","Roboto Mono",Menlo,Consolas,monospace;
+    --sans:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    font-family:var(--sans);
+    background:var(--ink-900);
+    color:var(--txt);
+    -webkit-font-smoothing:antialiased;
+    letter-spacing:.1px;
+    overflow:hidden;
+  }
+  ::selection{background:var(--accent-soft);color:#d6fff0}
+
+  /* ribbon */
+  .ribbon{
+    position:fixed;top:14px;left:50%;transform:translateX(-50%);
+    z-index:50;
+    font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;
+    color:var(--txt-2);
+    background:var(--panel);
+    border:1px solid var(--line);
+    padding:6px 14px;border-radius:999px;
+    box-shadow:var(--shadow);
+  }
+  .ribbon b{color:var(--accent);font-weight:700}
+
+  /* layout: 3 zones, 100vh */
+  .app{
+    height:100vh;width:100vw;
+    display:grid;
+    grid-template-columns:280px 1fr 300px;
+  }
+
+  /* ---------- LEFT rail ---------- */
+  .rail{
+    background:var(--ink-800);
+    border-right:1px solid var(--line);
+    display:flex;flex-direction:column;
+    padding:26px 20px 20px;
+  }
+  .brand{display:flex;align-items:center;gap:12px;padding-bottom:24px;border-bottom:1px solid var(--line-soft);}
+  .brand-mark{
+    width:38px;height:38px;border-radius:9px;
+    background:linear-gradient(160deg,#11261f,#0c1420);
+    border:1px solid var(--accent-line);
+    display:grid;place-items:center;
+    color:var(--accent);font-family:var(--mono);font-weight:700;font-size:15px;
+    box-shadow:inset 0 0 0 1px rgba(16,185,129,.08);
+  }
+  .brand-txt b{display:block;font-size:15px;letter-spacing:.3px}
+  .brand-txt span{font-size:11px;color:var(--txt-3);font-family:var(--mono);letter-spacing:.08em}
+
+  .rail-label{
+    margin:26px 4px 12px;font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--txt-3);
+  }
+
+  .steps{display:flex;flex-direction:column;gap:4px;flex:1}
+  .step{
+    display:grid;grid-template-columns:26px 1fr;gap:12px;align-items:center;
+    padding:12px 12px;border-radius:var(--radius-sm);cursor:pointer;
+    border:1px solid transparent;
+    transition:background .14s ease,border-color .14s ease;
+  }
+  .step:hover{background:var(--panel)}
+  .step.active{
+    background:var(--panel);
+    border-color:var(--line);
+  }
+  .step.active::before{
+    content:"";position:absolute;left:0;width:3px;height:24px;border-radius:2px;background:var(--accent);
+    margin-left:-21px;
+  }
+  .step{position:relative}
+  .st-icon{
+    width:26px;height:26px;border-radius:50%;
+    display:grid;place-items:center;
+    font-size:12px;font-weight:700;font-family:var(--mono);
+    border:1px solid var(--line);color:var(--txt-3);background:var(--ink-900);
+  }
+  .step.done .st-icon{color:var(--accent);border-color:var(--accent-line);background:var(--accent-soft)}
+  .step.current .st-icon{color:var(--ink-900);background:var(--accent);border-color:var(--accent)}
+  .step.locked{opacity:.55}
+  .st-body b{display:block;font-size:13.5px;font-weight:600;color:var(--txt)}
+  .step.locked .st-body b{color:var(--txt-2)}
+  .st-body span{font-size:11px;color:var(--txt-3);font-family:var(--mono)}
+
+  .rail-foot{
+    margin-top:16px;padding-top:16px;border-top:1px solid var(--line-soft);
+    font-size:11px;color:var(--txt-3);font-family:var(--mono);display:flex;justify-content:space-between;
+  }
+  .dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+
+  /* ---------- CENTER workspace ---------- */
+  .center{display:flex;flex-direction:column;min-width:0;background:var(--ink-900)}
+  .c-head{
+    flex:0 0 auto;
+    padding:24px 32px;
+    border-bottom:1px solid var(--line);
+    display:flex;align-items:flex-start;gap:20px;
+    background:linear-gradient(180deg,var(--ink-800),var(--ink-900));
+  }
+  .c-head .htxt{flex:1;min-width:0}
+  .c-head h1{font-size:21px;font-weight:700;letter-spacing:-.2px}
+  .c-head p{margin-top:6px;font-size:13px;color:var(--txt-2);max-width:560px;line-height:1.5}
+  .c-nav{display:flex;align-items:center;gap:10px}
+  .badge{
+    font-family:var(--mono);font-size:12px;color:var(--accent);
+    border:1px solid var(--accent-line);background:var(--accent-soft);
+    padding:6px 11px;border-radius:999px;letter-spacing:.05em;white-space:nowrap;
+  }
+  .btn{
+    font-family:var(--sans);font-size:13px;font-weight:600;
+    padding:9px 16px;border-radius:var(--radius-sm);cursor:pointer;
+    border:1px solid var(--line);background:var(--panel);color:var(--txt);
+    transition:border-color .14s,background .14s;
+  }
+  .btn:hover{border-color:var(--accent-line);background:var(--panel-rise)}
+  .btn:disabled{opacity:.4;cursor:not-allowed}
+  .btn.primary{background:var(--accent);color:var(--ink-900);border-color:var(--accent)}
+  .btn.primary:hover{background:#13c997;border-color:#13c997}
+  .btn.danger{border-color:#5a2c2a;color:var(--danger);background:#1f1416}
+  .btn.danger:hover{background:#2a1719;border-color:var(--danger)}
+
+  .c-body{flex:1;overflow:auto;padding:30px 32px 40px}
+  .pane{display:none;animation:fade .2s ease}
+  .pane.show{display:block}
+  @keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+
+  /* generic cards */
+  .card{
+    background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);
+    padding:22px;box-shadow:var(--shadow);
+  }
+  .card + .card{margin-top:18px}
+  .card-title{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--txt-3);margin-bottom:16px;display:flex;align-items:center;gap:8px}
+  .card-title::before{content:"";width:14px;height:1px;background:var(--accent)}
+
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+
+  /* ===== STEP 1 — dropzone + meta ===== */
+  .drop{
+    border:1.5px dashed var(--line);border-radius:var(--radius);
+    background:var(--ink-800);
+    padding:40px 24px;text-align:center;
+    transition:border-color .15s,background .15s;
+  }
+  .drop:hover{border-color:var(--accent-line);background:#0d1626}
+  .drop .ic{
+    width:48px;height:48px;margin:0 auto 14px;border-radius:11px;
+    border:1px solid var(--accent-line);background:var(--accent-soft);
+    display:grid;place-items:center;color:var(--accent);
+  }
+  .drop b{font-size:14px}
+  .drop p{margin-top:6px;font-size:12px;color:var(--txt-3);font-family:var(--mono)}
+  .filechip{
+    margin-top:16px;display:inline-flex;align-items:center;gap:10px;
+    background:var(--panel-rise);border:1px solid var(--line);border-radius:999px;
+    padding:8px 8px 8px 14px;font-family:var(--mono);font-size:12.5px;
+  }
+  .filechip .fx{color:var(--accent)}
+  .filechip .rm{
+    width:20px;height:20px;border-radius:50%;display:grid;place-items:center;
+    background:var(--ink-900);color:var(--txt-3);border:1px solid var(--line);cursor:pointer;font-size:11px;
+  }
+  .filechip .rm:hover{color:var(--danger);border-color:#5a2c2a}
+
+  .meta{display:grid;grid-template-columns:repeat(2,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden}
+  .meta .cell{background:var(--panel);padding:16px 18px}
+  .meta .k{font-size:11px;color:var(--txt-3);letter-spacing:.05em;text-transform:uppercase;font-family:var(--mono)}
+  .meta .v{margin-top:6px;font-size:16px;font-weight:600}
+  .meta .v small{font-size:12px;color:var(--txt-2);font-weight:400;font-family:var(--mono)}
+  .pill-el{display:inline-flex;gap:6px;margin-top:8px}
+  .pill-el span{font-family:var(--mono);font-size:12px;font-weight:600;color:var(--accent);background:var(--accent-soft);border:1px solid var(--accent-line);padding:3px 9px;border-radius:6px}
+
+  /* ===== generic forms (step 3) ===== */
+  .field{margin-bottom:18px}
+  .field:last-child{margin-bottom:0}
+  .field label{display:block;font-size:12px;color:var(--txt-2);margin-bottom:7px;font-weight:600}
+  .field label small{color:var(--txt-3);font-weight:400;font-family:var(--mono);margin-left:6px}
+  .control,select.control{
+    width:100%;font-family:var(--mono);font-size:13px;
+    background:var(--ink-800);border:1px solid var(--line);color:var(--txt);
+    padding:11px 13px;border-radius:var(--radius-sm);
+    appearance:none;
+  }
+  .control:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+  select.control{background-image:linear-gradient(45deg,transparent 50%,var(--txt-3) 50%),linear-gradient(135deg,var(--txt-3) 50%,transparent 50%);background-position:calc(100% - 18px) 50%,calc(100% - 13px) 50%;background-size:5px 5px,5px 5px;background-repeat:no-repeat}
+  .seg{display:flex;gap:6px}
+  .seg button{
+    flex:1;font-family:var(--mono);font-size:12.5px;padding:10px;border-radius:var(--radius-sm);cursor:pointer;
+    background:var(--ink-800);border:1px solid var(--line);color:var(--txt-2);
+  }
+  .seg button.on{background:var(--accent-soft);border-color:var(--accent-line);color:var(--accent)}
+
+  /* ===== step 5 — terminal + chart ===== */
+  .term{
+    background:#070b14;border:1px solid var(--line);border-radius:var(--radius);
+    font-family:var(--mono);font-size:12.5px;line-height:1.7;
+    padding:16px 18px;height:230px;overflow:auto;
+  }
+  .term .ln{display:flex;gap:12px}
+  .term .t{color:var(--txt-3);flex:0 0 64px}
+  .term .ok{color:var(--accent)}
+  .term .info{color:var(--txt)}
+  .term .dim{color:var(--txt-3)}
+  .term .warn{color:var(--warn)}
+  .cursor{display:inline-block;width:8px;height:15px;background:var(--accent);vertical-align:-2px;animation:blink 1s steps(2) infinite}
+  @keyframes blink{50%{opacity:0}}
+
+  .chart-wrap{display:flex;flex-direction:column;height:100%}
+  .legend{display:flex;gap:18px;margin-bottom:14px;font-family:var(--mono);font-size:11.5px;color:var(--txt-2)}
+  .legend i{display:inline-block;width:18px;height:2px;vertical-align:3px;margin-right:7px}
+  svg{width:100%;display:block}
+
+  .run-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:18px}
+  .stat{background:var(--ink-800);border:1px solid var(--line);border-radius:var(--radius-sm);padding:14px 16px}
+  .stat .k{font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--txt-3);font-family:var(--mono)}
+  .stat .v{margin-top:7px;font-size:20px;font-weight:700;font-family:var(--mono)}
+  .stat .v.acc{color:var(--accent)}
+
+  /* simple blocks for 2,4,6 */
+  .opt-row{display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid var(--line-soft)}
+  .opt-row:last-child{border-bottom:none}
+  .opt-row .lab b{font-size:14px}
+  .opt-row .lab span{display:block;font-size:11.5px;color:var(--txt-3);margin-top:3px;font-family:var(--mono)}
+  .switch{width:42px;height:24px;border-radius:999px;background:var(--ink-800);border:1px solid var(--line);position:relative;cursor:pointer}
+  .switch.on{background:var(--accent-soft);border-color:var(--accent-line)}
+  .switch i{position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;background:var(--txt-3);transition:.16s}
+  .switch.on i{left:20px;background:var(--accent)}
+
+  .plan-flow{display:flex;flex-direction:column;gap:10px}
+  .plan-step{display:flex;align-items:center;gap:14px;background:var(--ink-800);border:1px solid var(--line);border-radius:var(--radius-sm);padding:14px 16px}
+  .plan-step .n{width:24px;height:24px;border-radius:6px;display:grid;place-items:center;font-family:var(--mono);font-size:12px;font-weight:700;color:var(--accent);background:var(--accent-soft);border:1px solid var(--accent-line)}
+  .plan-step b{font-size:14px}
+  .plan-step span{font-size:11.5px;color:var(--txt-3);font-family:var(--mono);margin-left:auto}
+
+  .report-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .rep-card{background:var(--ink-800);border:1px solid var(--line);border-radius:var(--radius);padding:18px}
+  .rep-card .big{font-size:26px;font-weight:700;font-family:var(--mono);margin-top:6px}
+  .rep-card .big.acc{color:var(--accent)}
+  .rep-card .lab{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--txt-3);font-family:var(--mono)}
+
+  /* ---------- RIGHT summary ---------- */
+  .summary{
+    background:var(--ink-800);border-left:1px solid var(--line);
+    padding:26px 22px;overflow:auto;display:flex;flex-direction:column;gap:22px;
+  }
+  .sum-h{font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--txt-3)}
+  .sum-block .row{display:flex;justify-content:space-between;align-items:baseline;padding:9px 0;border-bottom:1px solid var(--line-soft);font-size:13px}
+  .sum-block .row:last-child{border-bottom:none}
+  .sum-block .row .k{color:var(--txt-3);font-size:12px}
+  .sum-block .row .v{font-family:var(--mono);color:var(--txt);font-weight:600;text-align:right}
+  .sum-block .row .v.acc{color:var(--accent)}
+
+  .prog-card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:18px}
+  .prog-top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:12px}
+  .prog-top b{font-size:13px}
+  .prog-top span{font-family:var(--mono);font-size:18px;font-weight:700;color:var(--accent)}
+  .bar{height:8px;border-radius:999px;background:var(--ink-900);border:1px solid var(--line);overflow:hidden}
+  .bar i{display:block;height:100%;width:33%;background:linear-gradient(90deg,var(--accent-line),var(--accent));transition:width .3s}
+  .prog-sub{margin-top:10px;font-size:11.5px;color:var(--txt-3);font-family:var(--mono)}
+
+  .mini-note{font-size:11.5px;color:var(--txt-3);line-height:1.6}
+  .scroll::-webkit-scrollbar{width:9px;height:9px}
+  .scroll::-webkit-scrollbar-thumb{background:var(--line);border-radius:8px;border:2px solid var(--ink-900)}
+</style>
+</head>
+<body>
+
+<div class="ribbon">Concept A · <b>Premium Ink</b> · 정적 데모</div>
+
+<div class="app">
+
+  <!-- ===================== LEFT RAIL ===================== -->
+  <aside class="rail">
+    <div class="brand">
+      <div class="brand-mark">Q</div>
+      <div class="brand-txt">
+        <b>AstralQ · CP2K</b>
+        <span>DFT Simulation Agent</span>
+      </div>
+    </div>
+
+    <div class="rail-label">Workflow</div>
+    <nav class="steps" id="steps"><!-- injected --></nav>
+
+    <div class="rail-foot">
+      <span><span class="dot"></span> Engine online</span>
+      <span>v2.7.0</span>
+    </div>
+  </aside>
+
+  <!-- ===================== CENTER ===================== -->
+  <main class="center">
+    <header class="c-head">
+      <div class="htxt">
+        <h1 id="c-title">구조 선택</h1>
+        <p id="c-desc">계산할 결정 구조를 업로드하거나 라이브러리에서 선택합니다. CIF 파일을 분석해 메타데이터를 추출합니다.</p>
+      </div>
+      <div class="c-nav">
+        <button class="btn" id="prevBtn">이전</button>
+        <button class="btn primary" id="nextBtn">다음</button>
+        <span class="badge" id="stepBadge">1 / 6</span>
+      </div>
+    </header>
+
+    <section class="c-body scroll">
+
+      <!-- ---- STEP 1 ---- -->
+      <div class="pane show" data-pane="0">
+        <div class="grid2">
+          <div class="card">
+            <div class="card-title">구조 입력</div>
+            <div class="drop">
+              <div class="ic">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 16V4M12 4l-4 4M12 4l4 4"/><path d="M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>
+              </div>
+              <b>CIF 파일을 여기에 드롭</b>
+              <p>or click to browse · .cif / .xyz / .poscar</p>
+              <div class="filechip">
+                <span class="fx">▣</span> TiO2_anatase.cif <span style="color:var(--txt-3)">· 4.1 KB</span>
+                <span class="rm">✕</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-title">구조 메타데이터</div>
+            <div class="meta">
+              <div class="cell">
+                <div class="k">구조명</div>
+                <div class="v">TiO₂ <small>anatase</small></div>
+              </div>
+              <div class="cell">
+                <div class="k">공간군</div>
+                <div class="v">I4₁/amd <small>#141</small></div>
+              </div>
+              <div class="cell">
+                <div class="k">구성 원소</div>
+                <div class="pill-el"><span>Ti</span><span>O</span></div>
+              </div>
+              <div class="cell">
+                <div class="k">원자 수</div>
+                <div class="v">30 <small>atoms</small></div>
+              </div>
+              <div class="cell">
+                <div class="k">격자 상수</div>
+                <div class="v" style="font-size:13px">a=3.78 · c=9.51 Å</div>
+              </div>
+              <div class="cell">
+                <div class="k">k-point mesh</div>
+                <div class="v">6×6×6</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ---- STEP 2 ---- -->
+      <div class="pane" data-pane="1">
+        <div class="card">
+          <div class="card-title">물성 선택</div>
+          <div class="opt-row">
+            <div class="lab"><b>전자 밴드 구조 (Band Structure)</b><span>고대칭 경로 Γ–X–M–Γ–Z</span></div>
+            <div class="switch on"><i></i></div>
+          </div>
+          <div class="opt-row">
+            <div class="lab"><b>상태 밀도 (DOS / PDOS)</b><span>원소별 투영 상태밀도</span></div>
+            <div class="switch on"><i></i></div>
+          </div>
+          <div class="opt-row">
+            <div class="lab"><b>광흡수 스펙트럼 (TDDFT)</b><span>여기 상태 · 흡수 계수</span></div>
+            <div class="switch"><i></i></div>
+          </div>
+          <div class="opt-row">
+            <div class="lab"><b>형성 에너지 (Formation Energy)</b><span>총 에너지 기반</span></div>
+            <div class="switch"><i></i></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ---- STEP 3 ---- -->
+      <div class="pane" data-pane="2">
+        <div class="grid2">
+          <div class="card">
+            <div class="card-title">기저 / 정밀도</div>
+            <div class="field">
+              <label>Basis Set <small>원자 궤도 기저</small></label>
+              <select class="control"><option>DZVP-MOLOPT-SR-GTH</option><option>TZVP-MOLOPT-GTH</option><option>SZV-MOLOPT-GTH</option></select>
+            </div>
+            <div class="field">
+              <label>Plane-wave Cutoff <small>Ry</small></label>
+              <input class="control" value="400" />
+            </div>
+            <div class="field">
+              <label>EPS_SCF <small>수렴 임계값</small></label>
+              <input class="control" value="1.0E-6" />
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-title">교환상관 / SCF</div>
+            <div class="field">
+              <label>Functional <small>교환상관 범함수</small></label>
+              <select class="control"><option>PBE</option><option>PBE0</option><option>BLYP</option><option>SCAN</option></select>
+            </div>
+            <div class="field">
+              <label>SCF Solver</label>
+              <div class="seg">
+                <button class="on">OT</button>
+                <button>Diagonalization</button>
+                <button>Broyden</button>
+              </div>
+            </div>
+            <div class="field">
+              <label>Max SCF Steps</label>
+              <input class="control" value="50" />
+            </div>
+            <button class="btn primary" style="width:100%;margin-top:6px">⟡ AI 플랜 생성</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ---- STEP 4 ---- -->
+      <div class="pane" data-pane="3">
+        <div class="card">
+          <div class="card-title">실행 플랜 확인</div>
+          <div class="plan-flow">
+            <div class="plan-step"><div class="n">1</div><b>GeomOpt</b><span>구조 최적화 · BFGS · 80 steps</span></div>
+            <div class="plan-step"><div class="n">2</div><b>SCF</b><span>기저 상태 · PBE · 400 Ry</span></div>
+            <div class="plan-step"><div class="n">3</div><b>Band</b><span>밴드 구조 · Γ–X–M–Γ–Z</span></div>
+            <div class="plan-step"><div class="n">4</div><b>DOS</b><span>투영 상태밀도 · PDOS</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ---- STEP 5 ---- -->
+      <div class="pane" data-pane="4">
+        <div class="grid2" style="grid-template-columns:1.1fr 1fr">
+          <div class="card">
+            <div class="card-title">실시간 로그 · cp2k.out</div>
+            <div class="term scroll" id="term">
+              <div class="ln"><span class="t">00:00:01</span><span class="ok">[OK]</span><span class="info">CP2K 8.2 initialized · 16 MPI ranks</span></div>
+              <div class="ln"><span class="t">00:00:03</span><span class="dim">[..]</span><span class="info">Reading TiO2_anatase.cif · 30 atoms</span></div>
+              <div class="ln"><span class="t">00:00:05</span><span class="ok">[OK]</span><span class="info">Basis DZVP-MOLOPT · cutoff 400 Ry</span></div>
+              <div class="ln"><span class="t">00:00:08</span><span class="dim">[..]</span><span class="info">GeomOpt step 12/80 · ΔE = 3.1e-4</span></div>
+              <div class="ln"><span class="t">00:00:14</span><span class="info">SCF iter 7 · ΔRMS = 8.4e-5</span></div>
+              <div class="ln"><span class="t">00:00:19</span><span class="info">SCF iter 11 · ΔRMS = 1.2e-6</span></div>
+              <div class="ln"><span class="t">00:00:21</span><span class="ok">[OK]</span><span class="info">SCF converged · E = −2381.47 Ha</span></div>
+              <div class="ln"><span class="t">00:00:22</span><span class="warn">[··]</span><span class="info">Computing band structure <span class="cursor"></span></span></div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-title">SCF / 에너지 수렴</div>
+            <div class="chart-wrap">
+              <div class="legend">
+                <span><i style="background:#10b981"></i>SCF residual</span>
+                <span><i style="background:#aeb8d0"></i>Total energy</span>
+              </div>
+              <svg viewBox="0 0 340 180" preserveAspectRatio="none">
+                <!-- grid -->
+                <g stroke="#252d44" stroke-width="1">
+                  <line x1="0" y1="45" x2="340" y2="45"/>
+                  <line x1="0" y1="90" x2="340" y2="90"/>
+                  <line x1="0" y1="135" x2="340" y2="135"/>
+                </g>
+                <!-- energy (muted) -->
+                <polyline fill="none" stroke="#aeb8d0" stroke-width="1.6" stroke-dasharray="4 3"
+                  points="6,150 40,120 74,98 108,82 142,70 176,62 210,57 244,54 278,52 312,51 334,51"/>
+                <!-- SCF residual (accent) -->
+                <polyline fill="none" stroke="#10b981" stroke-width="2.4" stroke-linejoin="round"
+                  points="6,30 40,58 74,40 108,78 142,96 176,112 210,128 244,140 278,150 312,158 334,162"/>
+                <!-- accent end node -->
+                <circle cx="334" cy="162" r="3.5" fill="#10b981"/>
+                <circle cx="334" cy="162" r="7" fill="none" stroke="#1f6f57" stroke-width="1.5"/>
+              </svg>
+              <div class="run-stats">
+                <div class="stat"><div class="k">SCF iter</div><div class="v acc">11</div></div>
+                <div class="stat"><div class="k">Energy (Ha)</div><div class="v">−2381.47</div></div>
+                <div class="stat"><div class="k">ΔRMS</div><div class="v">1.2e-6</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div style="margin-top:18px;text-align:right">
+          <button class="btn danger">■ STOP 계산 중단</button>
+        </div>
+      </div>
+
+      <!-- ---- STEP 6 ---- -->
+      <div class="pane" data-pane="5">
+        <div class="card">
+          <div class="card-title">결과 리포트</div>
+          <div class="report-grid">
+            <div class="rep-card"><div class="lab">Band Gap</div><div class="big acc">3.21 eV</div></div>
+            <div class="rep-card"><div class="lab">Total Energy</div><div class="big">−2381.47 Ha</div></div>
+            <div class="rep-card"><div class="lab">Fermi Level</div><div class="big">−4.86 eV</div></div>
+            <div class="rep-card"><div class="lab">Gap Type</div><div class="big" style="font-size:20px">Indirect</div></div>
+          </div>
+          <button class="btn primary" style="margin-top:18px">⤓ 리포트 PDF 내보내기</button>
+        </div>
+      </div>
+
+    </section>
+  </main>
+
+  <!-- ===================== RIGHT SUMMARY ===================== -->
+  <aside class="summary scroll">
+    <div class="prog-card">
+      <div class="prog-top"><b>진행률</b><span id="pPct">33%</span></div>
+      <div class="bar"><i id="pBar" style="width:33%"></i></div>
+      <div class="prog-sub" id="pSub">단계 2 / 6 · 물성 선택</div>
+    </div>
+
+    <div class="sum-block">
+      <div class="sum-h">구조</div>
+      <div class="row"><span class="k">구조명</span><span class="v acc">TiO₂_anatase</span></div>
+      <div class="row"><span class="k">원소</span><span class="v">Ti · O</span></div>
+      <div class="row"><span class="k">원자 수</span><span class="v">30</span></div>
+      <div class="row"><span class="k">k-mesh</span><span class="v">6×6×6</span></div>
+    </div>
+
+    <div class="sum-block">
+      <div class="sum-h">물성</div>
+      <div class="row"><span class="k">Band</span><span class="v acc">ON</span></div>
+      <div class="row"><span class="k">DOS / PDOS</span><span class="v acc">ON</span></div>
+      <div class="row"><span class="k">TDDFT</span><span class="v">OFF</span></div>
+    </div>
+
+    <div class="sum-block">
+      <div class="sum-h">핵심 옵션</div>
+      <div class="row"><span class="k">Functional</span><span class="v">PBE</span></div>
+      <div class="row"><span class="k">Basis</span><span class="v">DZVP</span></div>
+      <div class="row"><span class="k">Cutoff</span><span class="v">400 Ry</span></div>
+      <div class="row"><span class="k">SCF</span><span class="v">OT · 1e-6</span></div>
+    </div>
+
+    <div class="sum-block">
+      <div class="sum-h">플랜</div>
+      <div class="row"><span class="k">Pipeline</span><span class="v">GeomOpt→SCF</span></div>
+      <div class="row"><span class="k"></span><span class="v">→Band→DOS</span></div>
+    </div>
+
+    <p class="mini-note">Premium Ink · 깊은 잉크 네이비 위에 단일 에메랄드 강조와 절제된 1px 보더로 구성된 정제된 다크 인터페이스.</p>
+  </aside>
+
+</div>
+
+<script>
+(function(){
+  // step definitions: title, desc, sublabel, status
+  var steps = [
+    {t:"구조 선택", d:"계산할 결정 구조를 업로드하거나 라이브러리에서 선택합니다. CIF 파일을 분석해 메타데이터를 추출합니다.", s:"CIF 입력", st:"done"},
+    {t:"물성 선택", d:"계산할 물리량을 선택합니다. 밴드 구조, 상태 밀도, 광학 물성 등을 토글합니다.", s:"Band · DOS", st:"current"},
+    {t:"옵션 설정", d:"DFT 계산 파라미터를 설정합니다. 기저, cutoff, 범함수, SCF 솔버를 지정하세요.", s:"DFT 파라미터", st:"locked"},
+    {t:"플랜 확인", d:"AI가 생성한 실행 플랜을 검토합니다. 단계별 계산 순서와 설정을 확인하세요.", s:"실행 파이프라인", st:"locked"},
+    {t:"계산 / 모니터", d:"실시간 로그와 SCF/에너지 수렴 곡선을 모니터링합니다. 필요 시 계산을 중단할 수 있습니다.", s:"실시간 모니터", st:"locked"},
+    {t:"리포트", d:"계산 결과를 종합한 리포트입니다. 밴드 갭, 총 에너지 등 핵심 물성을 확인하세요.", s:"결과 요약", st:"locked"}
+  ];
+
+  var cur = 1; // start at step 2 (matches summary defaults)
+
+  var railEl = document.getElementById('steps');
+  var panes = document.querySelectorAll('.pane');
+  var titleEl = document.getElementById('c-title');
+  var descEl  = document.getElementById('c-desc');
+  var badgeEl = document.getElementById('stepBadge');
+  var prevBtn = document.getElementById('prevBtn');
+  var nextBtn = document.getElementById('nextBtn');
+  var pPct = document.getElementById('pPct');
+  var pBar = document.getElementById('pBar');
+  var pSub = document.getElementById('pSub');
+
+  function icon(idx){
+    if(steps[idx].st==='done') return '✓';
+    if(idx===cur) return '●';
+    if(steps[idx].st==='locked' && idx>cur) return '○';
+    return (idx+1);
+  }
+
+  function buildRail(){
+    railEl.innerHTML='';
+    steps.forEach(function(s,i){
+      var cls='step';
+      if(i===cur) cls+=' current active';
+      else if(i<cur || s.st==='done') cls+=' done';
+      else cls+=' locked';
+      var div=document.createElement('div');
+      div.className=cls;
+      div.innerHTML='<div class="st-icon">'+icon(i)+'</div>'+
+                    '<div class="st-body"><b>'+(i+1)+'. '+s.t+'</b><span>'+s.s+'</span></div>';
+      div.addEventListener('click',function(){ go(i); });
+      railEl.appendChild(div);
+    });
+  }
+
+  function render(){
+    panes.forEach(function(p,i){ p.classList.toggle('show', i===cur); });
+    titleEl.textContent = steps[cur].t;
+    descEl.textContent  = steps[cur].d;
+    badgeEl.textContent = (cur+1)+' / 6';
+    prevBtn.disabled = cur===0;
+    nextBtn.disabled = cur===steps.length-1;
+    var pct = Math.round(((cur+1)/steps.length)*100);
+    pPct.textContent = pct+'%';
+    pBar.style.width = pct+'%';
+    pSub.textContent = '단계 '+(cur+1)+' / 6 · '+steps[cur].t;
+    buildRail();
+  }
+
+  function go(i){
+    if(i<0||i>=steps.length) return;
+    cur=i; render();
+  }
+
+  prevBtn.addEventListener('click',function(){ go(cur-1); });
+  nextBtn.addEventListener('click',function(){ go(cur+1); });
+
+  render();
+})();
+</script>
+</body>
+</html>

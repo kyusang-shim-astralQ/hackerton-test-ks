@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>CP2K Agent — 디자인 시안 비교</title>
+<style>
+  :root{--primary:#6366f1;--primary-light:#818cf8;--primary-accent:#c084fc;--bg:#0f172a;
+    --t-strong:#f1f5f9;--t:#cbd5e1;--t-muted:#94a3b8;--t-dim:#64748b;--border:rgba(255,255,255,.08)}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:"Inter",system-ui,-apple-system,"Segoe UI",sans-serif;background:var(--bg);color:var(--t);min-height:100vh;
+    background-image:radial-gradient(900px 500px at 8% -12%,rgba(99,102,241,.18),transparent 60%),
+                     radial-gradient(800px 520px at 112% 0%,rgba(192,132,252,.14),transparent 55%);
+    padding:44px 24px 60px}
+  .wrap{max-width:1080px;margin:0 auto}
+  h1{font-size:30px;color:var(--t-strong);font-weight:800;background:linear-gradient(135deg,var(--primary-light),var(--primary-accent));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+  .sub{color:var(--t-muted);margin-top:8px;font-size:14px;line-height:1.6;max-width:780px}
+  h2.sec{font-size:14px;letter-spacing:1px;text-transform:uppercase;color:var(--t-dim);margin:34px 0 4px}
+  .sechint{font-size:12.5px;color:var(--t-dim);margin-bottom:16px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+  .card{background:rgba(30,41,59,.6);border:1px solid var(--border);border-radius:16px;padding:18px;backdrop-filter:blur(10px);display:flex;flex-direction:column;text-decoration:none}
+  .card:hover{border-color:rgba(129,140,248,.5);transform:translateY(-2px);transition:.15s}
+  .card.hero{padding:22px;border-color:rgba(129,140,248,.3)}
+  .tag{font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--primary-light);font-weight:700}
+  .card h3{font-size:19px;color:var(--t-strong);margin:6px 0 4px}
+  .card.mini h3{font-size:15px}
+  .card p{font-size:12.5px;color:var(--t-muted);line-height:1.55;min-height:48px}
+  .card.mini p{min-height:36px;font-size:12px}
+  .sw{display:flex;gap:6px;margin:12px 0 14px}
+  .sw i{width:22px;height:22px;border-radius:6px;border:1px solid rgba(255,255,255,.15);display:block}
+  .go{margin-top:auto;font-size:13px;font-weight:700;color:#fff;background:linear-gradient(135deg,var(--primary),var(--primary-light));padding:11px;border-radius:10px;text-align:center}
+  .rec{display:inline-block;font-size:10px;font-weight:700;color:#0f172a;background:var(--primary-light);padding:2px 8px;border-radius:999px;margin-left:8px;vertical-align:middle}
+  .note{margin-top:32px;font-size:12.5px;color:var(--t-dim);line-height:1.7;border-top:1px solid var(--border);padding-top:18px}
+  code{background:rgba(255,255,255,.06);padding:1px 6px;border-radius:5px;font-size:11.5px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>CP2K Agent · 디자인 시안</h1>
+  <p class="sub">선호하신 <b>A안 레이아웃</b>에 고르신 두 톤(Lab Paper · Premium Ink)을 <b>고화질(hi-fi)로 재제작</b>했습니다. 실제 웹폰트 · SVG 아이콘(이모지 제거) · 3Dmol 분자 뷰어 · Chart.js 수렴 차트 · 8pt 그리드까지 적용해 "프로토타입 느낌"을 걷어냈습니다.</p>
+
+  <h2 class="sec">고화질 (hi-fi) — 이걸 보세요</h2>
+  <div class="sechint">실제 폰트/아이콘/3D/차트 적용. 왼쪽 단계(1~6) 클릭, 1단계 분자 회전, 5단계 실시간 로그·차트를 확인하세요.</div>
+  <div class="grid2">
+    <a class="card hero" href="a-paper-hifi.html">
+      <span class="tag">Hi-Fi · Light</span><h3>Lab Paper <span class="rec">추천</span></h3>
+      <p>밝은 논문/노트 톤. 세리프 헤딩(Fraunces) + 헤어라인 + 절제된 딥인디고 강조. 차분·정밀한 인쇄물 감각.</p>
+      <div class="sw"><i style="background:#f6f5f1"></i><i style="background:#fbfbf9"></i><i style="background:#36367a"></i><i style="background:#7a2e2e"></i><i style="background:#1b1b1a"></i></div>
+      <div class="go">Lab Paper (hi-fi) 열기 →</div>
+    </a>
+    <a class="card hero" href="a-ink-hifi.html">
+      <span class="tag">Hi-Fi · Dark</span><h3>Premium Ink <span class="rec">추천</span></h3>
+      <p>정제된 고급 다크. 잉크 네이비 + 단일 에메랄드 강조, 글래스 제거. 선명한 보더와 강한 타입 위계.</p>
+      <div class="sw"><i style="background:#0a0e1a"></i><i style="background:#141a2c"></i><i style="background:#10b981"></i><i style="background:#22d3ee"></i><i style="background:#252d44"></i></div>
+      <div class="go">Premium Ink (hi-fi) 열기 →</div>
+    </a>
+  </div>
+
+  <h2 class="sec">초안 (wireframe) — 톤 비교용</h2>
+  <div class="sechint">아이콘/폰트/3D 적용 전의 와이어프레임. 톤 방향 비교용으로만 보세요(완성도는 위 hi-fi 기준).</div>
+  <div class="grid4">
+    <a class="card mini" href="a-paper.html"><span class="tag">draft</span><h3>Lab Paper</h3><p>밝은 논문 톤</p><div class="go">열기 →</div></a>
+    <a class="card mini" href="a-editorial.html"><span class="tag">draft</span><h3>Editorial</h3><p>굵은 타이포·그리드</p><div class="go">열기 →</div></a>
+    <a class="card mini" href="a-instrument.html"><span class="tag">draft</span><h3>Instrument</h3><p>터미널/계측기 다크</p><div class="go">열기 →</div></a>
+    <a class="card mini" href="a-ink.html"><span class="tag">draft</span><h3>Premium Ink</h3><p>정제된 다크</p><div class="go">열기 →</div></a>
+  </div>
+
+  <h2 class="sec">참고 — 레이아웃 비교</h2>
+  <div class="sechint">레이아웃 구조 비교용 원본(현재 다크-글래스 스킨).</div>
+  <div class="grid2" style="max-width:560px">
+    <a class="card mini" href="concept-a.html"><span class="tag">layout</span><h3>A · Guided Cockpit</h3><p>선형 가이드형(선택하신 레이아웃)</p><div class="go">열기 →</div></a>
+    <a class="card mini" href="concept-b.html"><span class="tag">layout</span><h3>B · TriRail Cockpit</h3><p>100vh 무스크롤 콕핏</p><div class="go">열기 →</div></a>
+  </div>
+
+  <p class="note">
+    ※ 정적 목업(백엔드 미연결). hi-fi 두 안은 외부 CDN(Google Fonts·3Dmol·Chart.js)을 쓰며, 오프라인이면 자동으로 폴백 표시됩니다.
+    어느 톤으로 갈지(또는 "Ink 골격 + Paper 타이포" 같은 혼합)와 바꾸고 싶은 점을 알려주시면 그 자리에서 다듬고,
+    확정되면 <code>docs/design-system.md</code>에 토큰/컴포넌트로 반영하겠습니다.
+  </p>
+</div>
+</body>
+</html>

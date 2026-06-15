@@ -1,0 +1,26 @@
+# === secrets (절대 커밋 금지) ===
+.env
+.env.local
+.env.*.local
+
+# === 레거시 코드 (백지 해커톤: 레포에 포함하지 않음. 로컬 참조용) ===
+reference/
+
+# === python ===
+__pycache__/
+*.pyc
+*.pyo
+*.pkl
+
+# === node / next ===
+node_modules/
+.next/
+out/
+dist/
+build/
+
+# === logs / os ===
+*.log
+logs/
+.DS_Store
+Thumbs.db

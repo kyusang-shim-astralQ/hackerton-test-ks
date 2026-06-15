@@ -1,0 +1,1645 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>CP2K Agent · Lab Paper · hi-fi</title>
+
+<!-- ============================================================
+     Real webfonts: Fraunces (serif heading), Inter (body),
+     JetBrains Mono (numerics). Loaded from Google Fonts.
+     ============================================================ -->
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+
+<!-- 3D structure viewer + convergence charts (graceful fallback if offline) -->
+<script src="https://3Dmol.org/build/3Dmol-min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+  /* ============================================================
+     Lab Paper — visual identity (hi-fi)
+     Paper tones, near-black ink, ONE restrained deep-indigo accent,
+     oxblood used VERY sparingly. Flat surfaces, 1px hairlines,
+     minimal elevation, generous whitespace, print-grade precision.
+     8pt spacing system. Explicit type scale. Tabular numerals.
+     ============================================================ */
+  :root{
+    /* ---- palette ---- */
+    --paper:        #f6f5f1;
+    --card:         #fbfbf9;
+    --inset:        #f0efe9;
+    --ink:          #1b1b1a;
+    --ink-soft:     #54524c;
+    --ink-faint:    #6f6d66;   /* AA (~5.0:1) on --card for 10–12px meta text */
+    --hairline:     #d8d6cd;   /* card borders: stronger so surfaces separate */
+    --hairline-2:   #cac8be;
+    --hairline-soft:#e6e4dd;   /* very-faint internal dividers only */
+    --accent:       #36367a;   /* deep indigo — primary accent */
+    --accent-ink:   #2a2a63;
+    --accent-wash:  #ececf4;
+    --accent-edge:  #c9c9e0;
+    --ok:           #3a5f3a;   /* muted ink-green — "done" */
+    --ok-wash:      #e8efe7;
+    --oxblood:      #7a2e2e;   /* used sparingly: STOP/alerts */
+    --oxblood-wash: #f3e7e5;
+
+    /* ---- type ---- */
+    --serif: "Fraunces", Georgia, "Noto Serif KR", serif;
+    --sans:  "Inter", system-ui, -apple-system, "Segoe UI", "Malgun Gothic", "Apple SD Gothic Neo", sans-serif;
+    --mono:  "JetBrains Mono", ui-monospace, "Cascadia Mono", "Consolas", monospace;
+
+    /* ---- 8pt spacing ---- */
+    --s1: 4px; --s2: 8px; --s3: 12px; --s4: 16px; --s6: 24px; --s8: 32px;
+
+    /* ---- radius scale ---- */
+    --r-sm: 5px; --r-md: 8px; --r-lg: 12px; --r-pill: 999px;
+  }
+
+  *{ box-sizing:border-box; }
+  html,body{ height:100%; margin:0; }
+  body{
+    font-family:var(--sans);
+    color:var(--ink);
+    background:var(--paper);
+    font-size:13px;
+    line-height:1.5;
+    letter-spacing:-0.003em;
+    -webkit-font-smoothing:antialiased;
+    text-rendering:optimizeLegibility;
+    overflow:hidden;
+  }
+  ::selection{ background:var(--accent-wash); }
+
+  /* tabular numerals everywhere numbers matter */
+  .mono, .num{ font-family:var(--mono); font-variant-numeric:tabular-nums; }
+
+  /* focus-visible ring (keyboard accessibility) */
+  :focus-visible{
+    outline:2px solid var(--accent);
+    outline-offset:2px;
+    border-radius:var(--r-sm);
+  }
+  button{ font-family:inherit; cursor:pointer; }
+  svg{ display:block; }
+
+  /* ---- restrained corner label ---- */
+  .corner-label{
+    position:fixed; top:0; left:0; z-index:80;
+    font-family:var(--mono);
+    font-size:10px; letter-spacing:.10em;
+    color:var(--accent-ink);
+    background:var(--accent-wash);
+    border-right:1px solid var(--accent-edge);
+    border-bottom:1px solid var(--accent-edge);
+    padding:4px 10px;
+    text-transform:uppercase;
+    border-bottom-right-radius:var(--r-sm);
+  }
+
+  /* ============================================================
+     LAYOUT — 100vh, 3 zones
+     ============================================================ */
+  .app{
+    display:grid;
+    grid-template-columns: 280px minmax(0,1fr) 300px;
+    grid-template-rows: minmax(0, 1fr);   /* cap the single row at 100vh so children scroll, not the page */
+    height:100vh;
+    width:100vw;
+    overflow:hidden;
+    transition:grid-template-columns .28s cubic-bezier(.4,0,.2,1);
+  }
+  /* right panel collapsed: workspace reclaims the 300px column */
+  .app.summary-collapsed{
+    grid-template-columns: 280px minmax(0,1fr) 0;
+  }
+  .app.summary-collapsed .summary{
+    padding-left:0; padding-right:0;
+    border-left-color:transparent;
+    opacity:0; visibility:hidden;
+    pointer-events:none;
+  }
+  @media (prefers-reduced-motion: reduce){
+    .app{ transition:none; }
+  }
+
+  /* ---------------- LEFT: step rail ---------------- */
+  .rail{
+    background:var(--card);
+    border-right:1px solid var(--hairline);
+    display:flex; flex-direction:column;
+    padding:var(--s6) var(--s4) var(--s4);
+    gap:var(--s6);
+    min-height:0;               /* allow internal scroll if rail overflows */
+    overflow-y:auto;
+    scrollbar-width:thin;
+    scrollbar-color:var(--hairline-2) transparent;
+  }
+  .brand{
+    display:flex; align-items:center; gap:var(--s3);
+    padding-bottom:var(--s4);
+    border-bottom:1px solid var(--hairline-soft);
+  }
+  .brand-mark{
+    width:38px; height:38px; flex:none;
+    border:1px solid var(--hairline-2);
+    border-radius:var(--r-md);
+    background:
+      linear-gradient(180deg,#ffffff 0%, var(--inset) 100%);
+    display:grid; place-items:center;
+    color:var(--accent);
+    box-shadow:inset 0 1px 0 #ffffff, 0 1px 2px rgba(27,27,26,.05);
+  }
+  .brand-name{
+    font-family:var(--serif);
+    font-weight:600; font-size:19px;
+    line-height:1.1; letter-spacing:-0.01em;
+  }
+  .brand-sub{
+    font-family:var(--mono);
+    font-size:10px; letter-spacing:.08em;
+    color:var(--ink-faint);
+    text-transform:uppercase;
+    margin-top:var(--s1);
+  }
+
+  .rail-heading{
+    font-size:11px; font-weight:600;
+    letter-spacing:.10em; text-transform:uppercase;
+    color:var(--ink-faint);
+    padding-left:var(--s1);
+  }
+
+  .steps{ display:flex; flex-direction:column; gap:var(--s1); margin-top:calc(-1 * var(--s3)); }
+  .step{
+    position:relative;
+    display:grid;
+    grid-template-columns:28px 1fr;
+    align-items:center;
+    gap:var(--s3);
+    padding:var(--s2) var(--s3);
+    border-radius:var(--r-md);
+    border:1px solid transparent;
+    background:transparent;
+    text-align:left; width:100%;
+    color:var(--ink-soft);
+    transition:background .16s ease, border-color .16s ease, color .16s ease;
+  }
+  .step:hover:not(.is-locked){ background:var(--inset); }
+  .step.is-current{
+    background:var(--accent-wash);
+    border-color:var(--accent-edge);
+    color:var(--ink);
+  }
+  .step.is-locked{ opacity:.55; cursor:not-allowed; }
+
+  .step-dot{
+    width:26px; height:26px; flex:none;
+    border-radius:var(--r-pill);
+    display:grid; place-items:center;
+    border:1px solid var(--hairline-2);
+    background:var(--card);
+    font-family:var(--mono); font-size:12px; font-weight:500;
+    color:var(--ink-faint);
+  }
+  .step.is-current .step-dot{
+    border-color:var(--accent);
+    background:var(--accent);
+    color:#fff;
+  }
+  .step.is-done .step-dot{
+    border-color:var(--ok);
+    background:var(--ok-wash);
+    color:var(--ok);
+  }
+  .step-body{ min-width:0; }
+  .step-title{ font-size:13px; font-weight:600; line-height:1.25; letter-spacing:-0.01em; }
+  .step.is-current .step-title{ color:var(--ink); }
+  .step-label{
+    font-family:var(--mono);
+    font-size:10px; letter-spacing:.04em;
+    color:var(--ink-faint);
+    margin-top:var(--s1);
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
+  .step-lock{ color:var(--ink-faint); }
+
+  .rail-foot{
+    margin-top:auto;
+    border-top:1px solid var(--hairline);
+    padding-top:var(--s4);
+    display:flex; align-items:center; gap:var(--s3);
+    color:var(--ink-faint);
+    font-size:11px;
+  }
+  .rail-foot .num{ color:var(--ink-soft); }
+
+  /* ---------------- CENTER: workspace ---------------- */
+  .work{
+    display:flex; flex-direction:column;
+    min-width:0; min-height:0; overflow:hidden;   /* min-height:0 lets .work-body scroll instead of clipping */
+    background:var(--paper);
+  }
+  .work-head{
+    flex:none;
+    border-bottom:1px solid var(--hairline);
+    background:var(--paper);
+    padding:var(--s6) var(--s8) var(--s4);
+    display:flex; align-items:flex-end; justify-content:space-between;
+    gap:var(--s6);
+  }
+  .work-head .eyebrow{
+    display:inline-flex; align-items:center; gap:var(--s2);
+    font-family:var(--mono);
+    font-size:11px; letter-spacing:.12em; text-transform:uppercase;
+    color:var(--accent); font-weight:500;
+  }
+  .work-head .eyebrow::before{
+    content:""; width:18px; height:1px; background:var(--accent); opacity:.55;
+  }
+  .work-head h1{
+    font-family:var(--serif);
+    font-weight:500; font-size:26px;
+    line-height:1.15; letter-spacing:-0.015em;
+    margin:var(--s2) 0 var(--s1);
+  }
+  .work-head p{
+    font-size:13px; color:var(--ink-soft);
+    max-width:62ch; margin:0;
+  }
+  .head-nav{ display:flex; align-items:center; gap:var(--s3); flex:none; }
+  .pager{
+    font-family:var(--mono);
+    font-size:12px; color:var(--ink-faint);
+    letter-spacing:.04em;
+    padding:0 var(--s2);
+  }
+  .pager b{ color:var(--ink); font-weight:600; }
+
+  .btn{
+    display:inline-flex; align-items:center; gap:var(--s2);
+    height:34px; padding:0 var(--s4);
+    border-radius:var(--r-md);
+    border:1px solid var(--hairline-2);
+    background:var(--card);
+    color:var(--ink); font-size:13px; font-weight:500;
+    transition:background .15s ease, border-color .15s ease, transform .05s ease;
+  }
+  .btn:hover{ background:var(--inset); border-color:var(--ink-faint); }
+  .btn:active{ transform:translateY(1px); }
+  .btn[disabled]{ opacity:.4; cursor:not-allowed; }
+  .btn-primary{
+    background:var(--accent); border-color:var(--accent); color:#fff;
+  }
+  .btn-primary:hover{ background:var(--accent-ink); border-color:var(--accent-ink); }
+  .btn-danger{
+    background:var(--card); border-color:var(--oxblood); color:var(--oxblood);
+  }
+  .btn-danger:hover{ background:var(--oxblood-wash); }
+  .btn-ghost{ background:transparent; border-color:transparent; padding:0 var(--s3); }
+  .btn-ghost:hover{ background:var(--inset); border-color:transparent; }
+  .btn-icon{ width:34px; padding:0; justify-content:center; }
+
+  .work-body{
+    flex:1 1 auto; min-height:0;   /* min-height:0 lets the flex child scroll instead of clipping */
+    overflow-y:auto;
+    padding:var(--s6) var(--s8) var(--s8);
+    scrollbar-width:thin;
+    scrollbar-color:var(--hairline-2) transparent;
+  }
+  .panel{ display:none; animation:fade .32s ease both; }
+  .panel.is-active{ display:block; }
+  @keyframes fade{ from{ opacity:0; transform:translateY(6px);} to{ opacity:1; transform:none; } }
+
+  /* ---- card primitives ---- */
+  .card{
+    background:var(--card);
+    border:1px solid var(--hairline);
+    border-radius:var(--r-lg);
+    padding:var(--s6);
+    box-shadow:0 1px 2px rgba(27,27,26,.04);
+  }
+  .card + .card{ margin-top:var(--s4); }
+  /* unified card-head: fixed min-height so title rows line up across columns,
+     whether or not a .card-sub label is present (8pt rhythm) */
+  .card-head{
+    display:flex; align-items:center; gap:var(--s2);
+    min-height:28px; margin-bottom:var(--s4);
+  }
+  .card-head h2{
+    font-family:var(--serif); font-weight:500; font-size:17px;
+    line-height:1.3;
+    letter-spacing:-0.01em; margin:0;
+  }
+  .card-head .ico{ color:var(--accent); display:flex; flex:none; }
+  .card-sub{ font-size:12px; color:var(--ink-faint); margin-left:auto; font-family:var(--mono); letter-spacing:.03em; }
+
+  .grid-2{ display:grid; grid-template-columns:1fr 1fr; gap:var(--s4); }
+  .grid-3{ display:grid; grid-template-columns:repeat(3,1fr); gap:var(--s3); }
+
+  /* 2-column card layout: stretch a single right-hand card to match a
+     left-hand stack's total height; keep stacked cards top-aligned.
+     The inner left column itself is a flex stack so its cards distribute. */
+  .panel .grid-2.cards{ align-items:stretch; }
+  .panel .grid-2.cards > .card{ align-self:stretch; margin-top:0; }   /* equal-height cards; margin-top:0 = 2번째 그리드 카드에 붙는 .card+.card 상단 마진 제거(상단 정렬) */
+  .panel .grid-2.cards > .col-stack{
+    display:flex; flex-direction:column; gap:var(--s4); min-width:0;
+  }
+  .panel .grid-2.cards > .col-stack > .card{ margin-top:0; }
+  /* a stretched card holding an AI plan becomes a column so the plan block
+     settles toward the bottom when the card is taller than its form */
+  .panel .grid-2.cards > .card.has-aiplan{ display:flex; flex-direction:column; }
+  .panel .grid-2.cards > .card.has-aiplan > .ai-plan{ margin-top:auto; }
+
+  /* ============================================================
+     STEP 1 — Structure
+     ============================================================ */
+  .dropzone{
+    border:1.5px dashed var(--hairline-2);
+    border-radius:var(--r-lg);
+    background:var(--inset);
+    padding:var(--s8);
+    text-align:center;
+    transition:border-color .18s ease, background .18s ease;
+    cursor:pointer;
+  }
+  .dropzone:hover{ border-color:var(--accent); background:var(--accent-wash); }
+  .dropzone .dz-ico{
+    width:44px; height:44px; margin:0 auto var(--s3);
+    border-radius:var(--r-md);
+    border:1px solid var(--hairline-2);
+    background:var(--card);
+    display:grid; place-items:center; color:var(--accent);
+  }
+  .dropzone strong{ font-size:14px; font-weight:600; }
+  .dropzone span{ display:block; color:var(--ink-faint); font-size:12px; margin-top:var(--s1); }
+  .dropzone .dz-formats{
+    display:flex; justify-content:center; flex-wrap:wrap; gap:var(--s2);
+    margin-top:var(--s4);
+  }
+  .dz-fmt{
+    font-family:var(--mono); font-size:10px; letter-spacing:.06em;
+    color:var(--ink-soft); background:var(--card);
+    border:1px solid var(--hairline-2); border-radius:var(--r-pill);
+    padding:3px var(--s3);
+    transition:border-color .18s ease, color .18s ease;
+  }
+  .dropzone:hover .dz-fmt{ border-color:var(--accent-edge); color:var(--accent-ink); }
+
+  .filechip{
+    display:flex; align-items:center; gap:var(--s3);
+    padding:var(--s3);
+    border:1px solid var(--hairline);
+    border-radius:var(--r-md);
+    background:var(--card);
+    margin-top:var(--s3);
+  }
+  .filechip .fc-ico{
+    width:34px; height:34px; flex:none; border-radius:var(--r-sm);
+    background:var(--accent-wash); color:var(--accent);
+    display:grid; place-items:center;
+  }
+  .filechip .fc-name{ font-family:var(--mono); font-size:12px; font-weight:500; }
+  .filechip .fc-meta{ font-size:11px; color:var(--ink-faint); }
+  .filechip .fc-badge{
+    margin-left:auto; display:inline-flex; align-items:center; gap:var(--s1);
+    font-size:11px; color:var(--ok); font-weight:600;
+    background:var(--ok-wash); border:1px solid #c2d4bf;
+    padding:var(--s1) var(--s3); border-radius:var(--r-pill);
+  }
+
+  .metalist{ list-style:none; margin:0; padding:0; }
+  .metalist li{
+    display:flex; align-items:baseline; justify-content:space-between;
+    padding:var(--s2) 0;
+    border-bottom:1px solid var(--hairline-soft);
+    font-size:13px;
+  }
+  .metalist li:last-child{ border-bottom:0; }
+  .metalist .k{ color:var(--ink-faint); }
+  .metalist .v{ font-family:var(--mono); font-variant-numeric:tabular-nums; color:var(--ink); font-weight:500; }
+
+  .viewer-wrap{
+    position:relative;
+    height:340px;
+    border:1px solid var(--hairline);
+    border-radius:var(--r-lg);
+    overflow:hidden;
+    background:
+      radial-gradient(120% 120% at 50% 0%, #ffffff 0%, var(--card) 55%, var(--inset) 100%);
+  }
+  #viewer{ position:absolute; inset:0; }
+  .viewer-fallback{
+    position:absolute; inset:0; display:none;
+    flex-direction:column; align-items:center; justify-content:center;
+    gap:var(--s3); color:var(--ink-faint);
+    text-align:center; padding:var(--s6);
+  }
+  .viewer-fallback.show{ display:flex; }
+  .viewer-fallback .lattice{ opacity:.7; }
+  .viewer-tag{
+    position:absolute; left:var(--s3); top:var(--s3); z-index:3;
+    font-family:var(--mono); font-size:10px; letter-spacing:.06em;
+    color:var(--ink-soft); background:rgba(251,251,249,.72);
+    border:1px solid var(--hairline); padding:var(--s1) var(--s2); border-radius:var(--r-pill);
+    backdrop-filter:blur(6px) saturate(1.1);
+  }
+  .viewer-legend{
+    position:absolute; right:var(--s3); bottom:var(--s3); z-index:3;
+    display:flex; gap:var(--s3);
+    font-family:var(--mono); font-size:10px; color:var(--ink-soft);
+    background:rgba(251,251,249,.72); border:1px solid var(--hairline);
+    padding:var(--s1) var(--s2); border-radius:var(--r-pill);
+    backdrop-filter:blur(6px) saturate(1.1);
+  }
+  .viewer-legend i{ display:inline-block; width:9px; height:9px; border-radius:50%; margin-right:var(--s1); vertical-align:middle; }
+
+  /* ============================================================
+     STEP 3 — DFT options form
+     ============================================================ */
+  .field{ margin-bottom:var(--s4); }
+  .field:last-child{ margin-bottom:0; }
+  .field > label{
+    display:block; font-size:11px; font-weight:600;
+    letter-spacing:.06em; text-transform:uppercase;
+    color:var(--ink-faint); margin-bottom:var(--s2);
+  }
+  .control{
+    width:100%; height:38px; padding:0 var(--s3);
+    border:1px solid var(--hairline-2); border-radius:var(--r-md);
+    background:var(--card); color:var(--ink);
+    font-family:var(--sans); font-size:13px;
+    transition:border-color .15s ease, box-shadow .15s ease;
+    appearance:none;
+  }
+  select.control{
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236f6d66' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+    background-repeat:no-repeat; background-position:right 10px center;
+    padding-right:34px;
+  }
+  .control:hover{ border-color:var(--ink-faint); }
+  /* mouse focus: subtle wash ring */
+  .control:focus{ border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-wash); outline:none; }
+  /* keyboard focus: explicit accent ring, consistent with global :focus-visible */
+  .control:focus-visible{ border-color:var(--accent); box-shadow:none; outline:2px solid var(--accent); outline-offset:2px; }
+  .control.mono{ font-family:var(--mono); }
+
+  .seg{ display:inline-flex; border:1px solid var(--hairline-2); border-radius:var(--r-md); overflow:hidden; background:var(--card); }
+  .seg button{
+    border:0; background:transparent; padding:var(--s2) var(--s4);
+    font-size:12px; font-weight:500; color:var(--ink-soft);
+    border-right:1px solid var(--hairline);
+    transition:background .14s ease, color .14s ease;
+  }
+  .seg button:last-child{ border-right:0; }
+  .seg button.on{ background:var(--accent); color:#fff; }
+  .seg button:not(.on):hover{ background:var(--inset); }
+
+  .chips{ display:flex; flex-wrap:wrap; gap:var(--s2); }
+  .chip-toggle{
+    display:inline-flex; align-items:center; gap:var(--s2);
+    padding:var(--s2) var(--s3); border-radius:var(--r-pill);
+    border:1px solid var(--hairline-2); background:var(--card);
+    font-size:12px; font-weight:500; color:var(--ink-soft);
+    transition:all .14s ease;
+  }
+  .chip-toggle .tick{ opacity:0; color:var(--accent); transition:opacity .14s ease; }
+  .chip-toggle.on{ border-color:var(--accent); background:var(--accent-wash); color:var(--accent-ink); }
+  .chip-toggle.on .tick{ opacity:1; }
+
+  .ai-plan{
+    margin-top:var(--s4);
+    border:1.5px solid var(--accent);
+    background:linear-gradient(180deg, var(--accent-wash), #f4f4fb);
+    border-radius:var(--r-lg);
+    padding:var(--s6);
+    display:flex; align-items:center; gap:var(--s4);
+    box-shadow:0 2px 10px rgba(54,54,122,.10);
+  }
+  .ai-plan .ai-ico{
+    width:44px; height:44px; flex:none; border-radius:var(--r-md);
+    background:var(--accent); border:1px solid var(--accent-ink);
+    display:grid; place-items:center; color:#fff;
+    box-shadow:0 1px 4px rgba(54,54,122,.25);
+  }
+  .ai-plan .ai-txt strong{ display:block; font-size:14px; font-weight:600; letter-spacing:-0.01em; }
+  .ai-plan .ai-txt span{ font-size:12px; color:var(--ink-soft); }
+  .ai-plan .btn{ margin-left:auto; }
+  /* dominant action: larger + stronger than navigation primary */
+  .btn-lg{ height:42px; padding:0 var(--s6); font-size:14px; font-weight:600; }
+
+  .plan-out{
+    margin-top:var(--s3);
+    border:1px solid var(--hairline); border-radius:var(--r-md);
+    background:var(--inset); padding:var(--s4);
+    font-family:var(--mono); font-size:12px; line-height:1.7;
+    color:var(--ink-soft);
+    display:none;
+  }
+  .plan-out.show{ display:block; animation:fade .3s ease both; }
+  .plan-out .ln{ display:flex; gap:var(--s3); }
+  .plan-out .ln .pfx{ color:var(--accent); }
+  .plan-out .ok{ color:var(--ok); }
+
+  /* ============================================================
+     STEP 5 — Monitor: terminal + chart + STOP
+     ============================================================ */
+  .run-bar{
+    display:flex; align-items:center; gap:var(--s4);
+    margin-bottom:var(--s4);
+    padding:var(--s3) var(--s4);
+    border:1px solid var(--hairline); border-radius:var(--r-md);
+    background:var(--card);
+  }
+  .run-state{ display:inline-flex; align-items:center; gap:var(--s2); font-weight:600; font-size:13px; }
+  .pulse{ width:9px; height:9px; border-radius:50%; background:var(--ok); position:relative; }
+  .pulse::after{ content:""; position:absolute; inset:-4px; border-radius:50%; border:1px solid var(--ok); opacity:.5; animation:ring 1.6s ease-out infinite; }
+  @keyframes ring{ to{ transform:scale(2.2); opacity:0; } }
+  .run-meta{ display:flex; gap:var(--s6); margin-left:var(--s2); }
+  .run-meta .rm{ font-size:11px; color:var(--ink-faint); }
+  .run-meta .rm b{ display:block; font-family:var(--mono); font-size:14px; color:var(--ink); font-weight:600; font-variant-numeric:tabular-nums; }
+
+  .term{
+    background:#16161e; border:1px solid #2a2a38; border-radius:var(--r-lg);
+    padding:var(--s4); height:300px; overflow:hidden;
+    font-family:var(--mono); font-size:12px; line-height:1.65;
+    position:relative;
+  }
+  .term-head{
+    display:flex; align-items:center; gap:var(--s2); margin:calc(-1 * var(--s1)) 0 var(--s3); padding-bottom:var(--s3);
+    border-bottom:1px solid #2a2a38;
+  }
+  .term-head .tdot{ width:9px; height:9px; border-radius:50%; }
+  .term-head .label{ margin-left:auto; color:#6e6e84; font-size:10px; letter-spacing:.1em; text-transform:uppercase; }
+  .term-body{ overflow-y:auto; height:calc(100% - 38px); scrollbar-width:thin; }
+  .term-body .l{ white-space:pre-wrap; color:#c7c7d6; }
+  .term-body .t{ color:#5b5b72; }
+  .term-body .g{ color:#7fd08a; }
+  .term-body .b{ color:#9b9bf0; }
+  .term-body .y{ color:#d6b46a; }
+  .term-body .cur::after{ content:"▌"; color:#9b9bf0; animation:blink 1s steps(1) infinite; }
+  @keyframes blink{ 50%{ opacity:0; } }
+
+  .chart-wrap{ position:relative; height:300px; }
+  #scfChart{ width:100% !important; height:100% !important; }
+  .chart-fallback{ position:absolute; inset:0; display:none; }
+  .chart-fallback.show{ display:block; }
+
+  .conv-stats{ display:flex; gap:var(--s6); margin-top:var(--s3); padding-top:var(--s3); border-top:1px solid var(--hairline-soft); }
+  .conv-stats .cs{ font-size:11px; color:var(--ink-faint); }
+  .conv-stats .cs b{ display:block; font-family:var(--mono); font-size:15px; color:var(--ink); font-weight:600; font-variant-numeric:tabular-nums; }
+  .conv-stats .cs .conv-ok{ color:var(--ok); }
+
+  /* ---------------- RIGHT: summary ---------------- */
+  .summary{
+    background:var(--card);
+    border-left:1px solid var(--hairline);
+    padding:var(--s6) var(--s4);
+    min-height:0;
+    overflow-y:auto; overflow-x:hidden;
+    display:flex; flex-direction:column; gap:var(--s6);
+    scrollbar-width:thin;
+    scrollbar-color:var(--hairline-2) transparent;
+    transition:opacity .2s ease, padding .28s cubic-bezier(.4,0,.2,1),
+               border-left-color .28s ease;
+  }
+  /* header row for the right panel: title + collapse toggle */
+  .sum-bar{
+    display:flex; align-items:center; justify-content:space-between;
+    gap:var(--s2);
+    margin:calc(-1 * var(--s2)) 0 var(--s1);
+  }
+  .sum-bar .sum-bar-title{
+    font-family:var(--mono);
+    font-size:10px; letter-spacing:.12em; text-transform:uppercase;
+    color:var(--ink-faint);
+  }
+  /* small square hairline icon button used by both toggles */
+  .panel-toggle{
+    width:26px; height:26px; flex:none;
+    display:grid; place-items:center;
+    border:1px solid var(--hairline-2); border-radius:var(--r-sm);
+    background:var(--card); color:var(--ink-soft);
+    transition:background .14s ease, border-color .14s ease, color .14s ease;
+  }
+  .panel-toggle:hover{ background:var(--inset); border-color:var(--ink-faint); color:var(--ink); }
+  .panel-toggle svg{ transition:transform .2s ease; }
+
+  /* reopen tab: appears at the right edge when the summary is collapsed */
+  .summary-reopen{
+    position:fixed; top:var(--s6); right:0; z-index:70;
+    display:none; align-items:center; gap:var(--s2);
+    height:32px; padding:0 var(--s3) 0 var(--s2);
+    border:1px solid var(--hairline-2); border-right:0;
+    border-top-left-radius:var(--r-md); border-bottom-left-radius:var(--r-md);
+    background:var(--card); color:var(--ink-soft);
+    font-family:var(--mono); font-size:10px; letter-spacing:.10em; text-transform:uppercase;
+    box-shadow:-2px 1px 6px rgba(27,27,26,.06);
+    transition:background .14s ease, color .14s ease, border-color .14s ease;
+  }
+  .summary-reopen:hover{ background:var(--inset); color:var(--ink); border-color:var(--ink-faint); }
+  .summary-reopen.show{ display:inline-flex; }
+  .sum-block .sum-title{
+    font-size:11px; font-weight:600; letter-spacing:.10em; text-transform:uppercase;
+    color:var(--ink-faint); margin-bottom:var(--s3);
+    display:flex; align-items:center; gap:var(--s2);
+  }
+  .sum-row{
+    display:flex; align-items:baseline; justify-content:space-between;
+    gap:var(--s3); padding:var(--s1) 0; font-size:12px;
+  }
+  .sum-row .k{ color:var(--ink-soft); }
+  .sum-row .v{ font-family:var(--mono); font-variant-numeric:tabular-nums; color:var(--ink); font-weight:500; text-align:right; }
+  .sum-row .v.accent{ color:var(--accent); }
+
+  .sum-divider{ height:1px; background:var(--hairline-soft); }
+
+  .progress-card{
+    border:1px solid var(--accent-edge);
+    background:var(--accent-wash);
+    border-radius:var(--r-lg);
+    padding:var(--s4);
+  }
+  .progress-card .pc-top{ display:flex; align-items:baseline; justify-content:space-between; }
+  .progress-card .pc-top .lbl{ font-size:11px; font-weight:600; letter-spacing:.08em; text-transform:uppercase; color:var(--accent-ink); }
+  .progress-card .pc-top .pct{ font-family:var(--mono); font-size:18px; font-weight:600; color:var(--accent-ink); font-variant-numeric:tabular-nums; }
+  .pbar{ height:var(--s2); border-radius:var(--r-pill); background:#d2d2e4; margin-top:var(--s3); overflow:hidden; }
+  .pbar > i{ display:block; height:100%; width:50%; border-radius:var(--r-pill); background:var(--accent); transition:width .5s ease; }
+  .pc-steps{ display:flex; gap:var(--s1); margin-top:var(--s3); }
+  .pc-steps i{ flex:1; height:var(--s1); border-radius:var(--r-pill); background:#d2d2e4; }
+  .pc-steps i.done{ background:var(--accent); }
+  .pc-steps i.cur{ background:var(--accent); opacity:.55; }
+
+  .stage-list{ list-style:none; margin:0; padding:0; }
+  .stage-list li{ display:flex; align-items:center; gap:var(--s3); padding:var(--s1) 0; font-size:12px; color:var(--ink-faint); transition:color .16s ease; }
+  .stage-list li .st-ico{ flex:none; color:var(--hairline-2); display:flex; }
+  .stage-list li.done{ color:var(--ink-soft); }
+  .stage-list li.done .st-ico{ color:var(--ok); }
+  .stage-list li.cur{ color:var(--ink); font-weight:600; }
+  .stage-list li.cur .st-ico{ color:var(--accent); }
+
+  /* step-aware right-panel rows: pending values read muted "— …" */
+  .sum-row .v.is-pending{ color:var(--ink-faint); font-weight:400; font-style:normal; letter-spacing:.01em; }
+
+  /* live run mirror (step 5 only) */
+  .run-mirror{ margin-top:var(--s4); border:1px solid var(--accent-edge); background:var(--accent-wash); border-radius:var(--r-md); padding:var(--s3) var(--s4); }
+  .run-mirror[hidden]{ display:none; }
+  .rmir-row{ display:flex; align-items:baseline; justify-content:space-between; gap:var(--s3); padding:var(--s1) 0; font-size:12px; }
+  .rmir-row .k{ color:var(--ink-soft); }
+  .rmir-row .v{ font-family:var(--mono); font-variant-numeric:tabular-nums; color:var(--ink); font-weight:500; }
+  .rmir-row .v#mirState{ display:inline-flex; align-items:center; gap:var(--s2); color:var(--accent-ink); }
+  .rmir-log{ margin-top:var(--s3); padding-top:var(--s3); border-top:1px solid var(--accent-edge); font-family:var(--mono); font-size:11px; color:var(--ink-soft); line-height:1.5; }
+
+  .badge{
+    display:inline-flex; align-items:center; gap:var(--s1);
+    font-size:10px; font-weight:600; letter-spacing:.04em;
+    padding:var(--s1) var(--s2); border-radius:var(--r-pill);
+  }
+  .badge.indigo{ background:var(--accent-wash); color:var(--accent-ink); border:1px solid var(--accent-edge); }
+  .badge.green{ background:var(--ok-wash); color:var(--ok); border:1px solid #c2d4bf; }
+
+  /* scrollbars (subtle, thin, Lab Paper tone) */
+  .work-body::-webkit-scrollbar, .summary::-webkit-scrollbar, .rail::-webkit-scrollbar, .term-body::-webkit-scrollbar{ width:6px; }
+  .work-body::-webkit-scrollbar-track, .summary::-webkit-scrollbar-track, .rail::-webkit-scrollbar-track{ background:transparent; }
+  .work-body::-webkit-scrollbar-thumb, .summary::-webkit-scrollbar-thumb, .rail::-webkit-scrollbar-thumb{ background:var(--hairline-2); border-radius:99px; }
+  .work-body::-webkit-scrollbar-thumb:hover, .summary::-webkit-scrollbar-thumb:hover, .rail::-webkit-scrollbar-thumb:hover{ background:var(--ink-faint); }
+  .term-body::-webkit-scrollbar-thumb{ background:#33333f; border-radius:99px; }
+
+  /* respect reduced-motion: kill panel fades, pulse ring, blinking cursor */
+  @media (prefers-reduced-motion: reduce){
+    *, *::before, *::after{
+      animation-duration:.001ms !important; animation-iteration-count:1 !important;
+      transition-duration:.001ms !important; scroll-behavior:auto !important;
+    }
+    .panel{ animation:none; }
+    .pulse::after{ animation:none; opacity:0; }
+    .term-body .cur::after{ animation:none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="corner-label">Lab Paper · hi-fi</div>
+
+<div class="app">
+
+  <!-- ============================ LEFT RAIL ============================ -->
+  <aside class="rail">
+    <div class="brand">
+      <div class="brand-mark" aria-hidden="true">
+        <!-- atom -->
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1.6"/><path d="M12 2c-4 4-7 7-7 10s3 6 7 10c4-4 7-7 7-10s-3-6-7-10Z"/><path d="M2 12c4-4 7-7 10-7s6 3 10 7c-4 4-7 7-10 7s-6-3-10-7Z"/></svg>
+      </div>
+      <div>
+        <div class="brand-name">CP2K&nbsp;Agent</div>
+        <div class="brand-sub">Quantum&nbsp;Lab</div>
+      </div>
+    </div>
+
+    <div>
+      <div class="rail-heading" style="margin-bottom:var(--s3)">워크플로우</div>
+      <!-- step states (done ✓ / current ● / locked ○) are set by JS from `cur` -->
+      <nav class="steps" id="steps" aria-label="단계">
+        <!-- (1) structure -->
+        <button class="step" data-step="1">
+          <span class="step-dot" aria-hidden="true">1</span>
+          <span class="step-body"><span class="step-title">구조</span><span class="step-label">Structure · CIF</span></span>
+        </button>
+        <!-- (2) properties -->
+        <button class="step" data-step="2">
+          <span class="step-dot" aria-hidden="true">2</span>
+          <span class="step-body"><span class="step-title">물성</span><span class="step-label">Properties</span></span>
+        </button>
+        <!-- (3) options -->
+        <button class="step" data-step="3">
+          <span class="step-dot" aria-hidden="true">3</span>
+          <span class="step-body"><span class="step-title">옵션</span><span class="step-label">DFT Options · PBE</span></span>
+        </button>
+        <!-- (4) plan -->
+        <button class="step" data-step="4">
+          <span class="step-dot" aria-hidden="true">4</span>
+          <span class="step-body"><span class="step-title">플랜</span><span class="step-label">Calculation Plan</span></span>
+        </button>
+        <!-- (5) monitor -->
+        <button class="step" data-step="5">
+          <span class="step-dot" aria-hidden="true">5</span>
+          <span class="step-body"><span class="step-title">계산 · 모니터</span><span class="step-label">Run &amp; Monitor</span></span>
+        </button>
+        <!-- (6) report -->
+        <button class="step" data-step="6">
+          <span class="step-dot" aria-hidden="true">6</span>
+          <span class="step-body"><span class="step-title">리포트</span><span class="step-label">Report</span></span>
+        </button>
+      </nav>
+    </div>
+
+    <div class="rail-foot">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+      <span>세션 <span class="num">#A-2417</span> · 자동저장됨</span>
+    </div>
+  </aside>
+
+  <!-- ============================ CENTER WORKSPACE ============================ -->
+  <main class="work">
+    <header class="work-head">
+      <div>
+        <div class="eyebrow" id="hd-eyebrow">단계 3 / 6</div>
+        <h1 id="hd-title">DFT 계산 옵션</h1>
+        <p id="hd-desc">교환·상관 범함수와 기저·k-점 격자를 선택하고, AI 플래너로 권장 설정을 생성합니다.</p>
+      </div>
+      <div class="head-nav">
+        <button class="btn btn-icon" id="prevBtn" aria-label="이전 단계">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <span class="pager"><b id="pgCur">3</b> / 6</span>
+        <button class="btn btn-primary" id="nextBtn">
+          다음
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <div class="work-body">
+
+      <!-- ===================== PANEL 1 — STRUCTURE ===================== -->
+      <section class="panel" data-panel="1">
+        <div class="grid-2 cards">
+          <div class="col-stack">
+            <div class="card">
+              <div class="card-head">
+                <span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></span>
+                <h2>구조 입력</h2>
+                <span class="card-sub">CIF / XYZ / POSCAR</span>
+              </div>
+              <div class="dropzone" tabindex="0" role="button" aria-label="구조 파일 업로드">
+                <div class="dz-ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></div>
+                <strong>구조 파일을 끌어다 놓으세요</strong>
+                <span>또는 클릭하여 선택 · 최대 25&nbsp;MB</span>
+                <div class="dz-formats" aria-hidden="true">
+                  <span class="dz-fmt">CIF</span>
+                  <span class="dz-fmt">XYZ</span>
+                  <span class="dz-fmt">POSCAR</span>
+                </div>
+              </div>
+              <div class="filechip">
+                <div class="fc-ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
+                <div>
+                  <div class="fc-name">TiO2_anatase.cif</div>
+                  <div class="fc-meta"><span class="num">3.42 KB</span> · I4₁/amd · 방금 검증됨</div>
+                </div>
+                <span class="fc-badge"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>유효</span>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-head">
+                <span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2v7.31"/><path d="M14 9.3V2"/><path d="M8.5 2h7"/><path d="M14 9.3a6.5 6.5 0 1 1-4 0"/><path d="M5.52 16h12.96"/></svg></span>
+                <h2>구조 메타데이터</h2>
+              </div>
+              <ul class="metalist">
+                <li><span class="k">화학식</span><span class="v">TiO₂</span></li>
+                <li><span class="k">상 (Phase)</span><span class="v">Anatase</span></li>
+                <li><span class="k">공간군</span><span class="v">I4₁/amd (141)</span></li>
+                <li><span class="k">격자상수 a = b</span><span class="v">3.7842 Å</span></li>
+                <li><span class="k">격자상수 c</span><span class="v">9.5146 Å</span></li>
+                <li><span class="k">단위포 원자 수</span><span class="v">12</span></li>
+                <li><span class="k">밀도</span><span class="v">3.89 g/cm³</span></li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-head">
+              <span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1.6"/><path d="M12 2c-4 4-7 7-7 10s3 6 7 10c4-4 7-7 7-10s-3-6-7-10Z"/><path d="M2 12c4-4 7-7 10-7s6 3 10 7c-4 4-7 7-10 7s-6-3-10-7Z"/></svg></span>
+              <h2>3D 구조 뷰어</h2>
+              <span class="card-sub">자동 회전</span>
+            </div>
+            <div class="viewer-wrap">
+              <div class="viewer-tag">TiO₂ · anatase · conventional cell · 12 atoms</div>
+              <div id="viewer"></div>
+              <div class="viewer-fallback" id="viewerFallback">
+                <svg class="lattice" width="120" height="120" viewBox="0 0 120 120" fill="none" stroke="var(--accent)" stroke-width="1.3">
+                  <g opacity=".35"><path d="M30 40 L90 40 L90 100 L30 100 Z"/><path d="M50 20 L110 20 L110 80 L50 80 Z"/><path d="M30 40 L50 20 M90 40 L110 20 M90 100 L110 80 M30 100 L50 80"/></g>
+                  <circle cx="30" cy="40" r="6" fill="var(--accent)" stroke="none"/><circle cx="90" cy="40" r="6" fill="var(--accent)" stroke="none"/>
+                  <circle cx="90" cy="100" r="6" fill="var(--accent)" stroke="none"/><circle cx="30" cy="100" r="6" fill="var(--accent)" stroke="none"/>
+                  <circle cx="60" cy="70" r="4.5" fill="var(--oxblood)" stroke="none"/><circle cx="70" cy="50" r="4.5" fill="var(--oxblood)" stroke="none"/>
+                </svg>
+                <div style="font-family:var(--mono);font-size:11px">3D 엔진 오프라인 — 정적 격자 미리보기</div>
+              </div>
+              <div class="viewer-legend"><span><i style="background:#5a5a8c"></i>Ti</span><span><i style="background:#c2554d"></i>O</span></div>
+            </div>
+            <p style="font-size:12px;color:var(--ink-faint);margin:var(--s3) 0 0">드래그하여 회전 · 스크롤로 확대. sphere + stick 표현, 결정 대칭 적용됨.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===================== PANEL 2 — PROPERTIES ===================== -->
+      <section class="panel" data-panel="2">
+        <div class="card">
+          <div class="card-head">
+            <span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="2" y1="14" x2="6" y2="14"/><line x1="10" y1="8" x2="14" y2="8"/><line x1="18" y1="16" x2="22" y2="16"/></svg></span>
+            <h2>계산할 물성 선택</h2>
+          </div>
+          <div class="grid-3">
+            <button class="chip-toggle on"><span class="tick"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>구조 최적화</button>
+            <button class="chip-toggle on"><span class="tick"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>밴드 구조</button>
+            <button class="chip-toggle on"><span class="tick"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>상태 밀도 (DOS)</button>
+            <button class="chip-toggle"><span class="tick"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>광흡수 (TDDFT)</button>
+            <button class="chip-toggle"><span class="tick"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>탄성 상수</button>
+            <button class="chip-toggle"><span class="tick"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>포논 분산</button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-head"><span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span><h2>선택 요약</h2></div>
+          <p style="font-size:13px;color:var(--ink-soft);margin:0">예상 워크플로우: <b>GeomOpt → SCF → Band → DOS</b>. 선택한 물성에 따라 다음 단계에서 정밀도·자원이 조정됩니다.</p>
+        </div>
+      </section>
+
+      <!-- ===================== PANEL 3 — OPTIONS (default active) ===================== -->
+      <section class="panel is-active" data-panel="3">
+        <div class="grid-2 cards">
+          <div class="card">
+            <div class="card-head">
+              <span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="2" y1="14" x2="6" y2="14"/><line x1="10" y1="8" x2="14" y2="8"/><line x1="18" y1="16" x2="22" y2="16"/></svg></span>
+              <h2>전자 구조 설정</h2>
+            </div>
+            <div class="field">
+              <label>교환·상관 범함수</label>
+              <select class="control">
+                <option selected>PBE (GGA)</option>
+                <option>PBEsol</option>
+                <option>SCAN (meta-GGA)</option>
+                <option>HSE06 (hybrid)</option>
+                <option>PBE0 (hybrid)</option>
+              </select>
+            </div>
+            <div class="grid-2">
+              <div class="field">
+                <label>기저 집합 (Basis)</label>
+                <select class="control"><option selected>DZVP-MOLOPT-SR</option><option>TZVP-MOLOPT</option><option>SZV-MOLOPT</option></select>
+              </div>
+              <div class="field">
+                <label>유사퍼텐셜</label>
+                <select class="control"><option selected>GTH-PBE</option><option>GTH-PBEsol</option></select>
+              </div>
+            </div>
+            <div class="grid-2">
+              <div class="field">
+                <label>평면파 컷오프</label>
+                <input class="control mono" value="600 Ry" />
+              </div>
+              <div class="field">
+                <label>상대 컷오프</label>
+                <input class="control mono" value="60 Ry" />
+              </div>
+            </div>
+            <div class="field">
+              <label>k-점 격자 (Monkhorst-Pack)</label>
+              <input class="control mono" value="6 × 6 × 6" />
+            </div>
+            <div class="field" style="margin-bottom:0">
+              <label>스핀 분극</label>
+              <div class="seg" role="group" aria-label="스핀 분극">
+                <button class="on">없음 (RKS)</button>
+                <button>있음 (UKS)</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-head">
+              <span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg></span>
+              <h2>SCF 수렴 설정</h2>
+            </div>
+            <div class="field">
+              <label>SCF 수렴 임계값 (EPS_SCF)</label>
+              <input class="control mono" value="1.0 × 10⁻⁶ Ha" />
+            </div>
+            <div class="grid-2">
+              <div class="field"><label>최대 SCF 반복</label><input class="control mono" value="50" /></div>
+              <div class="field"><label>혼합 (α)</label><input class="control mono" value="0.40" /></div>
+            </div>
+            <div class="field">
+              <label>스미어링 (전자 온도)</label>
+              <input class="control mono" value="300 K · Fermi-Dirac" />
+            </div>
+            <div class="field" style="margin-bottom:0">
+              <label>최적화기 (GeomOpt)</label>
+              <div class="seg" role="group" aria-label="최적화기">
+                <button class="on">BFGS</button>
+                <button>CG</button>
+                <button>L-BFGS</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- AI 계산 플랜 — 두 설정 카드 아래 전체 폭으로 배치 -->
+        <div class="card ai-plan-card" style="margin-top:var(--s4)">
+            <div class="ai-plan">
+              <div class="ai-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 4.6L18.5 9l-4.6 1.9L12 15l-1.9-4.1L5.5 9l4.6-1.4L12 3Z"/><path d="M19 14l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8.8-2Z"/></svg></div>
+              <div class="ai-txt">
+                <strong>AI 계산 플랜</strong>
+                <span>구조·물성·자원을 분석해 권장 설정을 제안합니다.</span>
+              </div>
+              <button class="btn btn-primary btn-lg" id="planBtn">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 4.6L18.5 9l-4.6 1.9L12 15l-1.9-4.1L5.5 9l4.6-1.4L12 3Z"/></svg>
+                플랜 생성
+              </button>
+            </div>
+            <div class="plan-out" id="planOut">
+              <div class="ln"><span class="pfx">›</span><span><span class="b">[AI Planner]</span> TiO₂ anatase · 밴드갭 정밀도 목표 분석 중…</span></div>
+              <div class="ln"><span class="pfx">›</span><span>PBE는 갭을 과소평가 → 밴드 단계에 <span class="y">HSE06 보정</span> 권장</span></div>
+              <div class="ln"><span class="pfx">›</span><span>컷오프 600 Ry / k 6×6×6 → 전 총에너지 수렴 (&lt; 1 meV/atom)</span></div>
+              <div class="ln"><span class="pfx">›</span><span class="ok" style="display:inline-flex;align-items:center;gap:var(--s2)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" style="flex:none"><polyline points="20 6 9 17 4 12"/></svg>플랜 확정: GeomOpt(BFGS) → SCF → Band(HSE06) → DOS · 예상 4.2 h</span></div>
+            </div>
+          </div>
+      </section>
+
+      <!-- ===================== PANEL 4 — PLAN ===================== -->
+      <section class="panel" data-panel="4">
+        <div class="card">
+          <div class="card-head"><span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M11 12H3"/><path d="M16 6H3"/><path d="M16 18H3"/><path d="m18 9 3 3-3 3"/></svg></span><h2>확정된 계산 플랜</h2><span class="badge indigo" style="margin-left:auto">4 stages</span></div>
+          <ul class="metalist">
+            <li><span class="k">① GeomOpt · BFGS</span><span class="v">≤ 50 steps · F &lt; 4.5×10⁻⁴ Ha/Bohr</span></li>
+            <li><span class="k">② SCF · PBE</span><span class="v">EPS_SCF 1×10⁻⁶ Ha · 600 Ry</span></li>
+            <li><span class="k">③ Band · HSE06</span><span class="v">Γ–X–M–Γ–Z · 120 k-pts</span></li>
+            <li><span class="k">④ DOS</span><span class="v">Gaussian σ = 0.05 eV</span></li>
+          </ul>
+        </div>
+        <div class="card">
+          <div class="card-head"><span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></span><h2>자원 추정</h2></div>
+          <div class="grid-3">
+            <div><div class="step-label" style="color:var(--ink-faint)">예상 시간</div><div class="num" style="font-size:22px;font-weight:600">4.2 h</div></div>
+            <div><div class="step-label" style="color:var(--ink-faint)">코어</div><div class="num" style="font-size:22px;font-weight:600">128</div></div>
+            <div><div class="step-label" style="color:var(--ink-faint)">메모리 / 코어</div><div class="num" style="font-size:22px;font-weight:600">2.0 GB</div></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===================== PANEL 5 — MONITOR ===================== -->
+      <section class="panel" data-panel="5">
+        <div class="run-bar">
+          <span class="run-state"><span class="pulse"></span>실행 중 · SCF</span>
+          <div class="run-meta">
+            <div class="rm">단계<b>2 / 4</b></div>
+            <div class="rm">SCF 반복<b id="scfIter">23</b></div>
+            <div class="rm">경과<b id="runElapsed">01:47:12</b></div>
+            <div class="rm">현재 에너지<b id="curE">−2087.41</b></div>
+          </div>
+          <button class="btn btn-danger" style="margin-left:auto" id="stopBtn">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" stroke="none"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>
+            STOP
+          </button>
+        </div>
+
+        <div class="grid-2 cards">
+          <!-- terminal -->
+          <div class="card" style="padding:var(--s4)">
+            <div class="term">
+              <div class="term-head">
+                <span class="tdot" style="background:#e0605a"></span><span class="tdot" style="background:#e0b25a"></span><span class="tdot" style="background:#6fb86f"></span>
+                <span class="label">cp2k.out · live</span>
+              </div>
+              <div class="term-body" id="termBody">
+                <div class="l"><span class="t">[01:45:02]</span> <span class="b">SCF WAVEFUNCTION OPTIMIZATION</span></div>
+                <div class="l"><span class="t">[01:45:18]</span> Step  Update method  Time   Convergence    Total energy</div>
+                <div class="l"><span class="t">[01:45:18]</span>   18   OT DIIS        2.41  <span class="y">3.2E-05</span>   -2087.398214</div>
+                <div class="l"><span class="t">[01:45:41]</span>   19   OT DIIS        2.38  <span class="y">1.7E-05</span>   -2087.404991</div>
+                <div class="l"><span class="t">[01:46:03]</span>   20   OT DIIS        2.40  <span class="y">8.9E-06</span>   -2087.408772</div>
+                <div class="l"><span class="t">[01:46:26]</span>   21   OT DIIS        2.39  <span class="g">4.1E-06</span>   -2087.410355</div>
+                <div class="l"><span class="t">[01:46:49]</span>   22   OT DIIS        2.37  <span class="g">2.3E-06</span>   -2087.411068</div>
+                <div class="l"><span class="t">[01:47:12]</span>   23   OT DIIS        2.38  <span class="g">1.4E-06</span>   -2087.411402</div>
+                <div class="l"><span class="t">[01:47:12]</span> <span class="b">target 1.0E-06 Ha</span> · <span class="g">approaching convergence…</span></div>
+                <div class="l cur"><span class="t">[01:47:13]</span> &nbsp;</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- convergence chart -->
+          <div class="card">
+            <div class="card-head">
+              <span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></span>
+              <h2>SCF 수렴</h2>
+              <span class="card-sub">log scale · Ha</span>
+            </div>
+            <div class="chart-wrap">
+              <canvas id="scfChart"></canvas>
+              <div class="chart-fallback" id="chartFallback">
+                <svg width="100%" height="100%" viewBox="0 0 400 300" preserveAspectRatio="none">
+                  <line x1="40" y1="20" x2="40" y2="260" stroke="var(--hairline-2)"/>
+                  <line x1="40" y1="260" x2="390" y2="260" stroke="var(--hairline-2)"/>
+                  <polyline points="40,40 90,80 140,110 190,150 240,185 290,215 340,238 388,250" fill="none" stroke="var(--accent)" stroke-width="2"/>
+                </svg>
+              </div>
+            </div>
+            <div class="conv-stats">
+              <div class="cs">ΔE 마지막<b id="convLast">1.4×10⁻⁶</b></div>
+              <div class="cs">목표<b>1.0×10⁻⁶</b></div>
+              <div class="cs">상태<b class="conv-ok">수렴 임박</b></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===================== PANEL 6 — REPORT (locked placeholder) ===================== -->
+      <section class="panel" data-panel="6">
+        <div class="card" style="text-align:center;padding:var(--s8)">
+          <div class="dz-ico" style="margin:0 auto var(--s3)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--ink-faint)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></div>
+          <h2 style="font-family:var(--serif);font-weight:500">리포트는 계산 완료 후 생성됩니다</h2>
+          <p style="color:var(--ink-faint);font-size:13px">5단계 계산이 끝나면 밴드갭·DOS·수렴 요약이 담긴 PDF 리포트를 다운로드할 수 있습니다.</p>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <!-- ============================ RIGHT SUMMARY ============================ -->
+  <!-- Step-aware: each block fills only once its step is reached. JS toggles
+       .is-set / .is-pending on the rows; pending rows read "— 선택 전". -->
+  <aside class="summary" id="summary" aria-label="요약 및 진행">
+    <div class="sum-bar">
+      <span class="sum-bar-title">요약 · 진행</span>
+      <button class="panel-toggle" id="sumCollapseBtn" type="button"
+              aria-label="요약 패널 접기" aria-expanded="true" aria-controls="summary" title="요약 패널 접기">
+        <!-- chevron pointing right = collapse toward the edge -->
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+      </button>
+    </div>
+    <div class="sum-block" data-fills="1">
+      <div class="sum-title">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1.6"/><path d="M12 2c-4 4-7 7-7 10s3 6 7 10c4-4 7-7 7-10s-3-6-7-10Z"/></svg>
+        구조
+      </div>
+      <div class="sum-row"><span class="k">화학식</span><span class="v" data-set="TiO₂">— 선택 전</span></div>
+      <div class="sum-row"><span class="k">상</span><span class="v" data-set="Anatase">— 선택 전</span></div>
+      <div class="sum-row"><span class="k">공간군</span><span class="v" data-set="I4₁/amd">— 선택 전</span></div>
+      <div class="sum-row"><span class="k">원자 수</span><span class="v" data-set="12">— 선택 전</span></div>
+    </div>
+    <div class="sum-divider"></div>
+
+    <div class="sum-block" data-fills="2">
+      <div class="sum-title">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="21" x2="4" y2="14"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="2" y1="14" x2="6" y2="14"/><line x1="10" y1="12" x2="14" y2="12"/><line x1="18" y1="16" x2="22" y2="16"/></svg>
+        물성
+      </div>
+      <div class="sum-row"><span class="k">구조 최적화</span><span class="v" data-set='<span class="badge green">ON</span>'>— 미선택</span></div>
+      <div class="sum-row"><span class="k">밴드 구조</span><span class="v" data-set='<span class="badge green">ON</span>'>— 미선택</span></div>
+      <div class="sum-row"><span class="k">DOS</span><span class="v" data-set='<span class="badge green">ON</span>'>— 미선택</span></div>
+    </div>
+    <div class="sum-divider"></div>
+
+    <div class="sum-block" data-fills="3">
+      <div class="sum-title">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><circle cx="4" cy="12" r="2"/><line x1="12" y1="21" x2="12" y2="12"/><circle cx="12" cy="9" r="2"/><line x1="12" y1="6" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><circle cx="20" cy="14" r="2"/><line x1="20" y1="11" x2="20" y2="3"/></svg>
+        핵심 옵션
+      </div>
+      <div class="sum-row"><span class="k">범함수</span><span class="v accent" data-set="PBE">— 미설정</span></div>
+      <div class="sum-row"><span class="k">기저</span><span class="v" data-set="DZVP-MOLOPT-SR">— 미설정</span></div>
+      <div class="sum-row"><span class="k">컷오프</span><span class="v" data-set="600 Ry">— 미설정</span></div>
+      <div class="sum-row"><span class="k">k-격자</span><span class="v" data-set="6×6×6">— 미설정</span></div>
+      <div class="sum-row"><span class="k">EPS_SCF</span><span class="v" data-set="1×10⁻⁶ Ha">— 미설정</span></div>
+    </div>
+    <div class="sum-divider"></div>
+
+    <div class="sum-block">
+      <div class="sum-title">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        진행
+      </div>
+      <div class="progress-card">
+        <div class="pc-top"><span class="lbl">전체 진행</span><span class="pct" id="rPct">17%</span></div>
+        <div class="pbar"><i id="rBar" style="width:17%"></i></div>
+        <div class="pc-steps" id="rSteps"><i class="cur"></i><i></i><i></i><i></i><i></i><i></i></div>
+      </div>
+
+      <!-- generic stage list (steps 1–4 & 6) -->
+      <ul class="stage-list" id="stageList" style="margin-top:var(--s4)">
+        <li data-stage="1"><span class="st-ico"></span>구조 검증</li>
+        <li data-stage="2"><span class="st-ico"></span>물성 선택</li>
+        <li data-stage="3"><span class="st-ico"></span>DFT 옵션 설정</li>
+        <li data-stage="4"><span class="st-ico"></span>플랜 확정</li>
+        <li data-stage="5"><span class="st-ico"></span>계산 실행</li>
+        <li data-stage="6"><span class="st-ico"></span>리포트 생성</li>
+      </ul>
+
+      <!-- live run mirror (only on step 5) -->
+      <div class="run-mirror" id="runMirror" hidden>
+        <div class="rmir-row"><span class="k">상태</span><span class="v" id="mirState">실행 중 · SCF</span></div>
+        <div class="rmir-row"><span class="k">단계</span><span class="v">SCF · 2 / 4</span></div>
+        <div class="rmir-row"><span class="k">SCF 반복</span><span class="v num" id="mirIter">23</span></div>
+        <div class="rmir-row"><span class="k">마지막 ΔE</span><span class="v num" id="mirDelta">1.4×10⁻⁶</span></div>
+        <div class="rmir-row"><span class="k">목표</span><span class="v num">1.0×10⁻⁶ Ha</span></div>
+        <div class="rmir-log" id="mirLog">SCF DIIS · 수렴 임박…</div>
+      </div>
+    </div>
+  </aside>
+
+</div>
+
+<!-- reopen tab — visible only while the summary panel is collapsed -->
+<button class="summary-reopen" id="sumReopenBtn" type="button"
+        aria-label="요약 패널 펼치기" aria-expanded="false" aria-controls="summary" title="요약 패널 펼치기">
+  <!-- chevron pointing left = pull the panel back out -->
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+  요약
+</button>
+
+<script>
+/* ============================================================
+   Step navigation (vanilla JS)
+   ============================================================ */
+(function(){
+  const META = {
+    1:{eb:"단계 1 / 6", t:"구조 입력 및 검증",       d:"CIF/XYZ 구조 파일을 업로드하면 대칭·격자 정보를 자동 추출하고 3D로 시각화합니다."},
+    2:{eb:"단계 2 / 6", t:"계산할 물성 선택",         d:"필요한 물성을 고르면 워크플로우와 정밀도가 자동으로 구성됩니다."},
+    3:{eb:"단계 3 / 6", t:"DFT 계산 옵션",            d:"교환·상관 범함수와 기저·k-점 격자를 선택하고, AI 플래너로 권장 설정을 생성합니다."},
+    4:{eb:"단계 4 / 6", t:"계산 플랜 확정",           d:"확정된 단계별 플랜과 자원 추정을 검토한 뒤 계산을 시작합니다."},
+    5:{eb:"단계 5 / 6", t:"계산 실행 및 모니터링",    d:"실시간 로그와 SCF 수렴 곡선을 확인하고, 필요 시 계산을 중단할 수 있습니다."},
+    6:{eb:"단계 6 / 6", t:"결과 리포트",              d:"밴드갭·DOS·수렴 요약을 PDF로 내보냅니다."}
+  };
+  const stepsEl = document.getElementById('steps');
+  const panels = document.querySelectorAll('.panel');
+  const hdEyebrow = document.getElementById('hd-eyebrow');
+  const hdTitle = document.getElementById('hd-title');
+  const hdDesc = document.getElementById('hd-desc');
+  const pgCur = document.getElementById('pgCur');
+  const prevBtn = document.getElementById('prevBtn');
+  const nextBtn = document.getElementById('nextBtn');
+  const summaryEl = document.getElementById('summary');
+  const runMirror = document.getElementById('runMirror');
+  const stageEls = document.querySelectorAll('#stageList li');
+
+  // inline SVG glyphs (no emoji) for step dots & stage markers
+  const SVG_CHECK = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+  const SVG_LOCK  = '<svg class="step-lock" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>';
+  const SVG_STAGE_DONE = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+  const SVG_STAGE_CUR  = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>';
+  const SVG_STAGE_TODO = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/></svg>';
+
+  let cur = 1;            // start at step 1 so the panel fills progressively
+  let maxReached = 1;     // furthest step the user has reached (drives "done" state)
+  const MAX = 6;          // report is reachable; it stays a placeholder until run done
+
+  // Right-panel step-aware fill: a block is "set" once its owning step has been reached.
+  function fillSummary(){
+    summaryEl.querySelectorAll('.sum-block[data-fills]').forEach(block=>{
+      const need = +block.dataset.fills;
+      const set = maxReached >= need;
+      block.querySelectorAll('.v[data-set]').forEach(v=>{
+        if(set){ v.innerHTML = v.dataset.set; v.classList.remove('is-pending'); }
+        else   { v.textContent = v.dataset.set.indexOf('badge')>-1 ? '— 미선택'
+                               : (need===3 ? '— 미설정' : '— 선택 전');
+                 v.classList.add('is-pending'); }
+      });
+    });
+  }
+
+  // Overall progress is bound to current step: step n ⇒ n/6 (step 6 = 100%).
+  // On step 5 the live SCF loop owns the bar (it animates inside step 5's band),
+  // so we leave pct/bar to liveTick there.
+  function fillProgress(){
+    const pct = Math.round(cur/6*100);
+    const rPct = document.getElementById('rPct');
+    const rBar = document.getElementById('rBar');
+    if(cur!==5){
+      if(rPct) rPct.textContent = pct+'%';
+      if(rBar) rBar.style.width = pct+'%';
+    }
+    document.querySelectorAll('#rSteps i').forEach((i,idx)=>{
+      i.className = (idx+1 < cur) ? 'done' : (idx+1===cur ? 'cur' : '');
+    });
+    // stage list: before cur = done, at cur = current, after = todo
+    stageEls.forEach(li=>{
+      const n = +li.dataset.stage;
+      li.classList.remove('done','cur');
+      const ico = li.querySelector('.st-ico');
+      if(n < cur){ li.classList.add('done'); ico.innerHTML = SVG_STAGE_DONE; }
+      else if(n === cur){ li.classList.add('cur'); ico.innerHTML = SVG_STAGE_CUR; }
+      else { ico.innerHTML = SVG_STAGE_TODO; }
+    });
+    // step 5 swaps the stage list for a live run mirror
+    const onRun = (cur===5);
+    runMirror.hidden = !onRun;
+    document.getElementById('stageList').style.display = onRun ? 'none' : '';
+  }
+
+  function renderRail(){
+    document.querySelectorAll('.step').forEach(s=>{
+      const n = +s.dataset.step;
+      const dot = s.querySelector('.step-dot');
+      s.classList.remove('is-current','is-done','is-locked');
+      s.removeAttribute('disabled');
+      if(n === cur){
+        s.classList.add('is-current'); dot.textContent = n;
+        s.setAttribute('aria-current','step');
+      } else if(n < cur || n <= maxReached){
+        s.classList.add('is-done'); dot.innerHTML = SVG_CHECK;
+        s.setAttribute('aria-current','false');
+      } else if(n > maxReached + 1){
+        s.classList.add('is-locked'); dot.innerHTML = SVG_LOCK;
+        s.disabled = true; s.setAttribute('aria-current','false');
+      } else {
+        dot.textContent = n; s.setAttribute('aria-current','false'); // reachable, not yet visited
+      }
+    });
+    // step 6 label mirrors run completion
+    const s6 = document.querySelector('.step[data-step="6"] .step-label');
+    if(s6) s6.textContent = runDone ? 'Report · 준비됨' : 'Report';
+  }
+
+  function render(){
+    maxReached = Math.max(maxReached, cur);
+    renderRail();
+    panels.forEach(p=> p.classList.toggle('is-active', +p.dataset.panel===cur));
+    const m = META[cur];
+    hdEyebrow.textContent = m.eb; hdTitle.textContent = m.t; hdDesc.textContent = m.d;
+    pgCur.textContent = cur;
+    prevBtn.disabled = cur<=1;
+    nextBtn.disabled = cur>=MAX;
+    fillSummary();
+    fillProgress();
+    if(cur===1) initViewer();
+    if(cur===5) initChart();
+  }
+  function go(n){ if(n<1||n>MAX) return; if(n>maxReached+1) return; cur=n; render(); }
+
+  stepsEl.addEventListener('click', e=>{
+    const s = e.target.closest('.step'); if(!s || s.disabled) return;
+    go(+s.dataset.step);
+  });
+  prevBtn.addEventListener('click', ()=>go(cur-1));
+  nextBtn.addEventListener('click', ()=>go(cur+1));
+  document.addEventListener('keydown', e=>{
+    if(e.target.matches('input,select,textarea')) return;
+    if(e.key==='ArrowLeft') go(cur-1);
+    if(e.key==='ArrowRight') go(cur+1);
+  });
+
+  /* AI plan reveal */
+  const planBtn = document.getElementById('planBtn');
+  if(planBtn){ planBtn.addEventListener('click', ()=>{
+    document.getElementById('planOut').classList.add('show');
+  });}
+
+  /* chip + segmented toggles */
+  document.querySelectorAll('.chip-toggle').forEach(c=>{
+    c.addEventListener('click', ()=>c.classList.toggle('on'));
+  });
+  document.querySelectorAll('.seg').forEach(seg=>{
+    seg.querySelectorAll('button').forEach(b=>{
+      b.addEventListener('click', ()=>{
+        seg.querySelectorAll('button').forEach(x=>x.classList.remove('on'));
+        b.classList.add('on');
+      });
+    });
+  });
+
+  /* ===== 3Dmol.js viewer with graceful fallback ===== */
+  let viewerReady = false;
+  function initViewer(){
+    if(viewerReady) return;
+    const host = document.getElementById('viewer');
+    const fb = document.getElementById('viewerFallback');
+    if(!host) return;
+    if(typeof $3Dmol === 'undefined'){ fb.classList.add('show'); viewerReady=true; return; }
+    try{
+      // TiO2 anatase conventional cell — 4 Ti + 8 O = 12 atoms, consistent
+      // with the metadata (a=b=3.7842 Å, c=9.5146 Å, I4₁/amd, u≈0.208).
+      // Ti deep-indigo, O oxblood-ish. Atom count matches "12" everywhere.
+      const a = 3.7842, c = 9.5146, u = 0.2081;
+      const Ti = [ [0,0,0], [0.5,0.5,0.5], [0.5,0,0.25], [0,0.5,0.75] ];
+      const O  = [ [0,0,u], [0,0,-u], [0.5,0.5,0.5+u], [0.5,0.5,0.5-u],
+                   [0.5,0,0.25+u], [0.5,0,0.25-u], [0,0.5,0.75+u], [0,0.5,0.75-u] ];
+      const frac2cart = (f)=> (f[0]*a).toFixed(4)+'  '+(f[1]*a).toFixed(4)+'  '+(f[2]*c).toFixed(4);
+      const xyz =
+        '12\nTiO2 anatase conventional cell\n' +
+        Ti.map(f=>'Ti  '+frac2cart(f)).join('\n') + '\n' +
+        O.map(f=>'O   '+frac2cart(f)).join('\n');
+      const v = $3Dmol.createViewer(host, {backgroundColor:'white'});
+      v.addModel(xyz, 'xyz');
+      v.setStyle({}, {
+        sphere:{scale:0.34},
+        stick:{radius:0.13, color:'#9aa0b5'}
+      });
+      v.setStyle({elem:'Ti'}, {sphere:{scale:0.40, color:'#4a4a82'}, stick:{radius:0.13, color:'#9aa0b5'}});
+      v.setStyle({elem:'O'},  {sphere:{scale:0.30, color:'#b04a44'}, stick:{radius:0.13, color:'#9aa0b5'}});
+      v.zoomTo();
+      v.zoom(1.15);
+      v.render();
+      // slow auto-rotate, unless the user prefers reduced motion
+      if(!window.matchMedia || !window.matchMedia('(prefers-reduced-motion: reduce)').matches){
+        v.spin('y', 0.4);
+      }
+      viewerReady = true;
+    }catch(err){
+      fb.classList.add('show'); viewerReady = true;
+    }
+  }
+
+  /* ===== Shared SCF data source (terminal + chart + progress all derive from this) ===== */
+  // |ΔE| per SCF step, indexed from step 10. The terminal log (steps 18–23),
+  // the chart, and the live loop all read/write this single array.
+  const SCF_START = 10;            // first step represented in the series
+  const scfDelta  = [3.1e-2,9.4e-3,4.1e-3,1.6e-3,7.2e-4,3.0e-4,1.3e-4,6.1e-5,3.2e-5,1.7e-5,8.9e-6,4.1e-6,2.3e-6,1.4e-6];
+  const scfEnergy = [-2087.398214,-2087.404991,-2087.408772,-2087.410355,-2087.411068,-2087.411402];
+  const SCF_TARGET = 1.0e-6;       // EPS_SCF convergence threshold
+  let scfStep = SCF_START + scfDelta.length - 1; // current last step = 23
+  let scfChart = null;
+
+  /* ===== Chart.js SCF convergence with SVG fallback ===== */
+  let chartReady = false;
+  function initChart(){
+    if(chartReady) return;
+    const cv = document.getElementById('scfChart');
+    const fb = document.getElementById('chartFallback');
+    if(!cv) return;
+    if(typeof Chart === 'undefined'){ fb.classList.add('show'); cv.style.display='none'; chartReady=true; return; }
+    try{
+      const ctx = cv.getContext('2d');
+      // |ΔE| decreasing toward target — derived from the shared scfDelta source
+      const data = scfDelta.slice();
+      const labels = data.map((_,i)=> (i+SCF_START));
+      const grad = ctx.createLinearGradient(0,0,0,300);
+      grad.addColorStop(0,'rgba(54,54,122,0.14)');
+      grad.addColorStop(1,'rgba(54,54,122,0)');
+      scfChart = new Chart(ctx, {
+        type:'line',
+        data:{ labels, datasets:[{
+          label:'|ΔE| (Ha)', data,
+          borderColor:'#36367a', backgroundColor:grad,
+          borderWidth:2, tension:0.35, fill:true,
+          pointRadius:0, pointHoverRadius:4,
+          pointHoverBackgroundColor:'#36367a', pointHoverBorderColor:'#fff', pointHoverBorderWidth:2
+        }]},
+        options:{
+          responsive:true, maintainAspectRatio:false,
+          interaction:{intersect:false, mode:'index'},
+          plugins:{
+            legend:{display:false},
+            tooltip:{
+              backgroundColor:'#1b1b1a', padding:10, cornerRadius:6,
+              titleFont:{family:"'JetBrains Mono',monospace", size:11},
+              bodyFont:{family:"'JetBrains Mono',monospace", size:12},
+              callbacks:{
+                title:(it)=>'SCF step '+it[0].label,
+                label:(it)=>'|ΔE| = '+it.parsed.y.toExponential(1)+' Ha'
+              }
+            }
+          },
+          scales:{
+            y:{ type:'logarithmic',
+                grid:{color:'#e6e4dd', drawBorder:false},
+                ticks:{ color:'#6f6d66', font:{family:"'JetBrains Mono',monospace", size:10},
+                        callback:(v)=>{ const l=Math.log10(v); return Number.isInteger(l)? '1e'+l : ''; } } },
+            x:{ grid:{display:false, drawBorder:false},
+                ticks:{ color:'#6f6d66', font:{family:"'JetBrains Mono',monospace", size:10}, maxTicksLimit:8 } }
+          }
+        }
+      });
+      chartReady = true;
+    }catch(err){
+      fb.classList.add('show'); cv.style.display='none'; chartReady = true;
+    }
+  }
+
+  /* ============================================================
+     LIVE MONITOR — a single tick advances every readout from the
+     shared SCF source: terminal log, iter count, current energy,
+     convergence chart, and the right-rail progress card. No value
+     is hard-coded to a static frame anymore.
+     ============================================================ */
+  const fmtClock = (s)=>{
+    const h=String(Math.floor(s/3600)).padStart(2,'0');
+    const m=String(Math.floor(s%3600/60)).padStart(2,'0');
+    const ss=String(s%60).padStart(2,'0');
+    return h+':'+m+':'+ss;
+  };
+  const expo = (x)=>{ // 1.4E-06 style, matching the existing log
+    const e = x.toExponential(1).replace('e','E');
+    return e.replace(/E([+-])(\d)$/, 'E$10$2');
+  };
+  const convClass = (d)=> d < 1e-5 ? 'g' : 'y';
+  const SUP = {'-':'⁻','0':'⁰','1':'¹','2':'²','3':'³','4':'⁴','5':'⁵','6':'⁶','7':'⁷','8':'⁸','9':'⁹'};
+  const sciSup = (x)=>{ // 1.4×10⁻⁶ style for the conv-stats readout
+    const [m,e] = x.toExponential(1).split('e');
+    const sup = e.replace(/^\+/,'').split('').map(c=>SUP[c]||c).join('');
+    return m+'×10'+sup;
+  };
+
+  let elapsed = 1*3600 + 47*60 + 12; // 01:47:12 baseline
+  let running = true;
+  let converged = false;
+  let runDone = false;   // set true once SCF converges; report step then reads "완료"
+
+  function liveTick(){
+    const panel5 = document.querySelector('.panel[data-panel="5"]');
+    if(!panel5 || !panel5.classList.contains('is-active') || !running || converged) return;
+
+    const term = document.getElementById('termBody');
+    const iterEl = document.getElementById('scfIter');
+    const curEl  = document.getElementById('curE');
+    const rPct = document.getElementById('rPct');
+    const rBar = document.getElementById('rBar');
+    const rSteps = document.getElementById('rSteps');
+
+    // --- next SCF step from the shared source: geometric decay toward target + noise ---
+    scfStep += 1;
+    const prevD = scfDelta[scfDelta.length-1];
+    let nextD = prevD * (0.55 + Math.random()*0.18);          // ~0.55–0.73 decay
+    if(nextD < SCF_TARGET*0.7) nextD = SCF_TARGET*0.7;        // floor near target
+    scfDelta.push(nextD);
+    const prevE = scfEnergy[scfEnergy.length-1];
+    const nextE = prevE + (Math.random()*2-1) * Math.max(nextD, 1e-7) * 4; // ΔE-linked jitter
+    scfEnergy.push(nextE);
+
+    const stepTime = (2.36 + Math.random()*0.06).toFixed(2);
+    elapsed += 23;
+
+    // --- terminal: append a real log line, move the live cursor to the new last row ---
+    if(term){
+      const prevCur = term.querySelector('.cur');
+      if(prevCur) prevCur.classList.remove('cur');
+      const ts = '['+fmtClock(elapsed)+']';
+      const row = document.createElement('div');
+      row.className = 'l';
+      row.innerHTML = '<span class="t">'+ts+'</span>   '+scfStep+
+        '   OT DIIS        '+stepTime+'  <span class="'+convClass(nextD)+'">'+expo(nextD)+
+        '</span>   '+nextE.toFixed(6);
+      term.appendChild(row);
+      // fresh blinking cursor line
+      const curRow = document.createElement('div');
+      curRow.className = 'l cur';
+      curRow.innerHTML = '<span class="t">['+fmtClock(elapsed+1)+']</span> &nbsp;';
+      term.appendChild(curRow);
+      // keep the log bounded + scrolled to the live edge
+      while(term.children.length > 40) term.removeChild(term.firstChild);
+      term.scrollTop = term.scrollHeight;
+    }
+
+    // --- run-bar readouts ---
+    if(iterEl) iterEl.textContent = scfStep;
+    if(curEl)  curEl.textContent  = nextE.toFixed(2);
+    const elapsedEl = document.getElementById('runElapsed');
+    if(elapsedEl) elapsedEl.textContent = fmtClock(elapsed);
+
+    // --- convergence chart: push the new point from the same source ---
+    if(scfChart){
+      scfChart.data.labels.push(scfStep);
+      scfChart.data.datasets[0].data.push(nextD);
+      if(scfChart.data.labels.length > 22){
+        scfChart.data.labels.shift();
+        scfChart.data.datasets[0].data.shift();
+      }
+      scfChart.update('none');
+    }
+
+    // --- conv-stats last ΔE ---
+    const convLast = document.getElementById('convLast');
+    if(convLast) convLast.textContent = sciSup(nextD);
+
+    // --- right-panel live mirror (step 5) ---
+    const mirIter = document.getElementById('mirIter');
+    const mirDelta = document.getElementById('mirDelta');
+    const mirLog = document.getElementById('mirLog');
+    if(mirIter) mirIter.textContent = scfStep;
+    if(mirDelta) mirDelta.textContent = sciSup(nextD);
+    if(mirLog) mirLog.textContent = (nextD < 1e-5 ? 'SCF DIIS · 수렴 임박…' : 'SCF DIIS · 수렴 진행 중');
+
+    // --- progress card: step 5 occupies the 4/6→5/6 band (67%→83%);
+    // SCF convergence (log scale) animates the bar inside that band ---
+    const D0 = Math.log10(3.1e-2), DT = Math.log10(SCF_TARGET);
+    const frac = Math.min(1, Math.max(0, (D0 - Math.log10(nextD)) / (D0 - DT)));
+    const lo = Math.round(4/6*100), hi = Math.round(5/6*100);
+    const pct = Math.round(lo + frac*(hi-lo));
+    if(rPct) rPct.textContent = pct+'%';
+    if(rBar) rBar.style.width = pct+'%';
+
+    // --- convergence reached: settle the UI into a "done SCF" state ---
+    if(nextD <= SCF_TARGET){
+      converged = true;
+      if(term){
+        const prevCur = term.querySelector('.cur');
+        if(prevCur) prevCur.classList.remove('cur');
+        const done = document.createElement('div');
+        done.className = 'l';
+        done.innerHTML = '<span class="t">['+fmtClock(elapsed+1)+']</span> '+
+          '<span class="b">SCF CONVERGED</span> · <span class="g">'+expo(nextD)+
+          ' &lt; target 1.0E-06 Ha</span>';
+        term.appendChild(done);
+        term.scrollTop = term.scrollHeight;
+      }
+      const csState = document.querySelector('.conv-stats .conv-ok');
+      if(csState) csState.textContent = '수렴 완료';
+      // settle the progress bar at the top of step 5's band (≈83%)
+      const hi = Math.round(5/6*100);
+      if(rPct) rPct.textContent = hi+'%';
+      if(rBar) rBar.style.width = hi+'%';
+      // run-mirror → converged
+      const mirState = document.getElementById('mirState');
+      const mirLog = document.getElementById('mirLog');
+      if(mirState) mirState.innerHTML = '<span class="pulse" style="position:static;background:var(--ok)"></span>SCF 수렴 완료';
+      if(mirLog) mirLog.textContent = 'SCF CONVERGED · ' + expo(nextD) + ' < 1.0E-06 Ha';
+      // unlock the report step now that the run produced results
+      runDone = true;
+      renderRail();
+    }
+  }
+  setInterval(liveTick, 1600);
+
+  /* STOP halts the live stream */
+  const stopBtn = document.getElementById('stopBtn');
+  if(stopBtn){ stopBtn.addEventListener('click', ()=>{
+    running = false;
+    const rs = document.querySelector('.run-state');
+    if(rs) rs.innerHTML = '<span class="pulse" style="background:var(--oxblood)"></span>중단됨 · STOP';
+    const mirState = document.getElementById('mirState');
+    const mirLog = document.getElementById('mirLog');
+    if(mirState) mirState.innerHTML = '<span class="pulse" style="position:static;background:var(--oxblood)"></span>중단됨';
+    if(mirLog) mirLog.textContent = '사용자에 의해 계산이 중단되었습니다.';
+  });}
+
+  /* ============================================================
+     Right summary panel — collapse / expand
+     Default: expanded. State persisted in localStorage. Both the
+     in-panel chevron and the edge "요약" tab toggle it; aria-expanded
+     stays in sync and the reopen tab is shown only when collapsed.
+     ============================================================ */
+  (function(){
+    const app = document.querySelector('.app');
+    const collapseBtn = document.getElementById('sumCollapseBtn');
+    const reopenBtn = document.getElementById('sumReopenBtn');
+    if(!app || !collapseBtn || !reopenBtn) return;
+    const KEY = 'cp2k.summaryCollapsed';
+
+    function apply(collapsed, persist){
+      app.classList.toggle('summary-collapsed', collapsed);
+      reopenBtn.classList.toggle('show', collapsed);
+      collapseBtn.setAttribute('aria-expanded', String(!collapsed));
+      reopenBtn.setAttribute('aria-expanded', String(!collapsed));
+      // keep collapsed content out of the tab order
+      summaryEl.setAttribute('aria-hidden', String(collapsed));
+      if(persist){
+        try{ localStorage.setItem(KEY, collapsed ? '1' : '0'); }catch(e){}
+      }
+    }
+    function setCollapsed(v){ apply(v, true); }
+
+    collapseBtn.addEventListener('click', ()=> setCollapsed(true));
+    reopenBtn.addEventListener('click', ()=>{
+      setCollapsed(false);
+      collapseBtn.focus(); // return focus into the now-visible panel
+    });
+
+    // restore persisted state (default expanded)
+    let initial = false;
+    try{ initial = localStorage.getItem(KEY) === '1'; }catch(e){}
+    apply(initial, false);
+  })();
+
+  render();
+})();
+</script>
+</body>
+</html>
