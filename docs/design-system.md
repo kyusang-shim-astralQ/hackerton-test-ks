@@ -3,7 +3,7 @@
 > **목적**: 확정된 디자인 방향(**Lab Paper**)과 그 실제 토큰/레이아웃을 박제하여, Next.js(App Router) + TypeScript + Tailwind CSS + shadcn/ui 마이그레이션에서 6개 화면이 동일한 토큰/컴포넌트를 공유하도록 보장하는 **계약 문서**입니다.
 > 본 문서에 적힌 토큰/컴포넌트/props는 **변경 시 합의가 필요한 공유 인터페이스**입니다. 추측한 값이 아니라 확정 목업에서 추출한 값만 담았습니다.
 >
-> - **시각 기준(source of truth)**: `docs/mockups/a-paper-hifi.html` — 모든 색·폰트·간격·radius·레이아웃 토큰의 단일 출처. 본 문서와 충돌 시 목업이 우선이며, 변경은 양쪽을 함께 갱신합니다.
+> - **시각 기준(source of truth)**: **이 문서(`design-system.md`)가 디자인 단일 기준**입니다. 모든 색·폰트·간격·radius·레이아웃 토큰의 단일 출처이며, 변경은 이 문서를 갱신합니다.
 > - 엔드포인트 계약: `docs/features/<도메인>/api.md` (기능별 HTTP 명세), 데이터 모델: `docs/contracts/data-models.md`
 > - 기능별 화면 분담: `docs/features/f1-structure` ~ `f6-benchmark`
 > - 참고(이전 시안): 원본 바닐라 JS UI(`frontend/`)는 더 이상 룩앤필 기준이 아니며, 기능/데이터 흐름 참조용으로만 사용합니다. 원본 대비 변경/추가/누락은 §8 델타 섹션 참조.
@@ -14,7 +14,7 @@
 
 > **한 줄 요약**: 밝은 페이퍼 배경 + 잉크 텍스트 + 절제된 딥인디고(deep-indigo) 강조 + 세리프 헤딩(**Fraunces**) + 산세리프 본문(**Inter**) + 모노 수치(**JetBrains Mono**), **플랫·헤어라인(1px)·여백 중심**의 과학 논문 톤.
 
-여러 시안 중 **'Lab Paper(밝은 과학 논문 톤)'** 방향을 **확정**했습니다. 고화질 목업 `docs/mockups/a-paper-hifi.html`이 완성되었으며, **이 파일이 토큰·레이아웃의 실제 소스(source of truth)**입니다.
+여러 시안 중 **'Lab Paper(밝은 과학 논문 톤)'** 방향을 **확정**했습니다. **이 문서(`design-system.md`)가 토큰·레이아웃의 실제 소스(source of truth)**입니다.
 
 **디자인 원칙 (Lab Paper Identity)**
 - **밝은 페이퍼 표면**: 배경은 따뜻한 종이색(`--paper #f6f5f1`), 카드는 한 톤 밝은 종이(`--card #fbfbf9`). 다크 글래스모피즘은 폐기.
@@ -66,7 +66,7 @@ lib/
   utils.ts                   # cn() 등
   i18n/                      # 사전(ko/en)
 stores/
-  wizard-store.ts            # Zustand persist (세션 복원)
+  wizard-store.ts            # Zustand persist (입력만 저장 + reset, §4.6)
 ```
 규칙: **공유 컴포넌트는 `components/ui`에만 정의**하고, 각 feature는 이를 import만 한다. feature 안에서 버튼/배지를 재정의하면 안 된다(일관성 깨짐 방지).
 
@@ -74,12 +74,12 @@ stores/
 
 ## 2. 디자인 토큰 (Design Tokens) — Lab Paper 캐노니컬
 
-아래 값은 **`docs/mockups/a-paper-hifi.html`의 `:root`에서 그대로 추출**한 실제 값입니다(추측 없음). semantic 네이밍으로 통합하되 목업의 변수명/hex를 1:1 보존했습니다. 정체성은 **밝은 페이퍼 + 잉크 텍스트 + 단일 딥인디고 강조 + 헤어라인 + 8pt 여백**입니다.
+아래 값은 이 문서가 박제한 **Lab Paper 캐노니컬 `:root` 값**입니다(추측 없음). semantic 네이밍으로 통합한 변수명/hex가 단일 기준입니다. 정체성은 **밝은 페이퍼 + 잉크 텍스트 + 단일 딥인디고 강조 + 헤어라인 + 8pt 여백**입니다.
 
 ### 2.1 `globals.css` — CSS 변수 (`:root`)
 
 ```css
-/* app/globals.css — Lab Paper canonical tokens (source: docs/mockups/a-paper-hifi.html) */
+/* app/globals.css — Lab Paper canonical tokens (source of truth: design-system.md) */
 :root {
   /* === Palette: paper surfaces === */
   --paper:        #f6f5f1;   /* body 배경 (따뜻한 종이색) */
@@ -340,7 +340,8 @@ interface SegmentedProps { value: string; onValueChange: (v: string) => void;
   items: { value: string; label: string }[]; }
 // 컨테이너: inline-flex + hairline-2 보더 + radius-md. on 버튼: accent 배경 + 흰 글자.
 
-// .chip-toggle: 다중 선택(체크 성격). 예: 계산할 물성 6종.
+// .chip-toggle: 다중 선택(체크 성격). 예: 부가 출력 항목 등 복수 선택이 필요한 토글.
+//   (참고: 계산할 물성은 단일 선택이므로 .seg/라디오를 사용 — step-2, §4.2)
 interface ChipToggleProps { checked?: boolean; onChange?: (v: boolean) => void; children: React.ReactNode; }
 // off: card 배경 + hairline-2 보더 + ink-soft. on: accent-wash 배경 + accent 보더 + accent-ink + 체크 아이콘 표시.
 ```
@@ -352,7 +353,7 @@ interface FormFieldProps {
   label: string;            // .field > label: 11px, 600, uppercase, letter-spacing .06em, ink-faint
   htmlFor: string;
   control: "input-text" | "input-number" | "select";
-  mono?: boolean;           // 수치 입력은 .control.mono (컷오프, k-격자, EPS_SCF 등)
+  mono?: boolean;           // 수치 입력은 .control.mono (컷오프, EPS_SCF 등)
   disabled?: boolean;
   children: React.ReactNode; // 실제 input/select
 }
@@ -373,8 +374,7 @@ interface MetaListProps { items: { k: React.ReactNode; v: React.ReactNode }[]; }
 interface DataTableProps<T> {
   variant?:
     | "report"    // th 대문자 ink-faint, hover 행 강조
-    | "benchmark" // 행 분리(border-spacing), 라운드 행
-    | "kpoint";   // mono 폰트, sticky th, tr.converged = ok 톤 강조
+    | "benchmark"; // 행 분리(border-spacing), 라운드 행
   columns: { key: keyof T; header: string; align?: "left" | "right" | "center"; mono?: boolean }[];
   rows: T[];
   rowStatus?: (row: T) => "converged" | "done" | "stopped" | undefined; // tr 상태색(Lab Paper 톤)
@@ -403,9 +403,13 @@ interface LogTerminalProps {
 ### 3.10 ConvergenceChart — `components/ui/convergence-chart.tsx` (신규, Chart.js 래퍼) ★
 ```ts
 interface ConvergenceChartProps {
-  // SCF |ΔE| 수렴(목업 확정): type line, y축 logarithmic, x축 SCF step.
-  labels: (number | string)[];   // SCF step 번호
-  delta: number[];               // |ΔE| (Ha), 목표 EPS_SCF로 수렴
+  // SCF |ΔE| 수렴: type line, y축 logarithmic, x축 SCF step.
+  // **스텝별 인스턴스**: 차트 하나는 한 계산 스텝(step_histories[stepIndex])만 그린다.
+  //   여러 스텝은 스텝 탭 또는 스텝별 개별 차트로 렌더(단일 통합 차트로 합치지 않음, §4.2·§4.3).
+  stepIndex: number;             // 이 차트가 담당하는 계산 스텝(step_histories 키)
+  stepLabel?: string;            // 스텝 탭/제목용 라벨(예: "① GeomOpt", "② SCF")
+  labels: (number | string)[];   // 해당 스텝의 SCF step 번호
+  delta: number[];               // 해당 스텝의 |ΔE| (Ha), 목표 EPS_SCF로 수렴
   target?: number;               // 1.0e-6 (참고선/판정용)
   height?: number;               // 기본 300 (.chart-wrap)
 }
@@ -430,6 +434,17 @@ interface MoleculeViewerProps {
 //   (Ti #4a4a82 딥인디고, O #b04a44 옥스블러드). zoomTo() + zoom(1.15) + render().
 // 폴백: $3Dmol undefined 또는 예외 시 정적 격자 SVG(.viewer-fallback.show, accent/oxblood 원자).
 // 래퍼 칩: 좌상단 viewer-tag(구조 요약), 우하단 viewer-legend(원소 색 범례) — 모두 페이퍼 톤 + blur.
+//
+// ⚠️ 정리(cleanup) — 필수 (메모리 누수·프리징 방지):
+//   3Dmol spin()은 내부 requestAnimationFrame 무한 루프를 돌리고, 뷰어 하나가 WebGL 컨텍스트 1개를 점유한다.
+//   clear()만 호출하면 ① 회전 루프가 안 멈추고 ② WebGL 컨텍스트도 안 풀려, 단계 이동/재마운트마다 누적 →
+//   브라우저 WebGL 컨텍스트 한도(~16) 초과 시 화면 전체가 멈춘다(프리징).
+//   useEffect cleanup(언마운트)에서 반드시 순서대로:
+//     ① v.spin(false) — 회전 애니메이션 루프 정지
+//     ② v.clear() — 모델/장면 제거
+//     ③ host의 3Dmol <canvas> 제거로 WebGL 컨텍스트 해제 (host.replaceChildren() 또는 host.innerHTML="")
+//   effect 재실행 시에도 새 뷰어 생성 전에 이전 뷰어를 위 순서로 dispose(중복 컨텍스트 금지).
+//   다중-CIF는 동시에 여러 뷰어를 띄우지 말고 활성 구조 1개만 렌더해 컨텍스트 수를 최소화.
 ```
 
 기타 도메인 카드(`features/<도메인>/components`에서 조립): `Dropzone`(파일 업로드, 1.5px dashed + inset, hover accent), `FileChip`(파일명 mono + green 유효 배지), `MetaList`(k/v 행, v는 mono + tabular-nums), `RunBar`(step-5 상태 + 경과/반복/에너지 메타 + STOP), `ConvStats`(수렴 통계 3열), `AlertCard`(accent/ok/oxblood 톤). 재구축 필요 카드(원본엔 있었으나 데모 미구현 — §8): `BenchmarkCard`, `TddftDashboard`, `KpointDashboard`, `FlowchartNode`(4단계 플랜 인포그래픽), `CodeViewer`(INP/SGE 신택스), 다중-CIF 비교 탭. 모두 §2 토큰 + §3 베이스를 import.
@@ -468,17 +483,17 @@ interface MoleculeViewerProps {
 | 단계 | 제목 (eyebrow / h1) | work-body 콘텐츠 | 우측 요약 채움 |
 |---|---|---|---|
 | **1 구조** | 단계 1/6 · 구조 입력 및 검증 | 좌: 구조 입력 Dropzone(CIF/XYZ/POSCAR) + FileChip + 구조 메타데이터 MetaList(화학식·상·공간군·격자상수·원자수·밀도). 우: **3D 구조 뷰어(3Dmol, 자동 회전)** + 범례 | 구조 블록(화학식/상/공간군/원자수) |
-| **2 물성** | 단계 2/6 · 계산할 물성 선택 | ChipToggle 3열(구조 최적화·밴드 구조·DOS·TDDFT·탄성·포논 — 다중 선택) + 선택 요약(예상 워크플로우) | 물성 블록(선택 항목 ON 배지) |
-| **3 옵션** | 단계 3/6 · DFT 계산 옵션 | 좌: 전자 구조 설정(범함수·기저·유사퍼텐셜·컷오프·k-격자·스핀 Segmented). 우: SCF 수렴 설정(EPS_SCF·최대반복·혼합α·스미어링·최적화기 Segmented). 하단 전체폭: **AI 계산 플랜 카드**(생성 버튼 → plan-out 로그 펼침) | 핵심 옵션 블록(범함수·기저·컷오프·k-격자·EPS_SCF) |
+| **2 물성** | 단계 2/6 · 계산할 물성 선택 | **12개 물성 중 단일 선택(라디오)** 3열(구조 최적화·밴드 구조·DOS·TDDFT·탄성·포논 등 12종 중 하나만 선택) + 선택 요약(예상 워크플로우) | 물성 블록(선택한 단일 항목 배지) |
+| **3 옵션** | 단계 3/6 · DFT 계산 옵션 | 좌: 전자 구조 설정(범함수·기저·유사퍼텐셜·컷오프·스핀 Segmented). 우: SCF 수렴 설정(EPS_SCF·최대반복·혼합α·스미어링·최적화기 Segmented). 하단 전체폭: **AI 계산 플랜 카드**(생성 버튼 → plan-out 로그 펼침) | 핵심 옵션 블록(범함수·기저·컷오프·EPS_SCF) |
 | **4 플랜** | 단계 4/6 · 계산 플랜 확정 | 확정 플랜 MetaList(① GeomOpt ② SCF ③ Band ④ DOS, "4 stages" 배지) + 자원 추정 3열(예상 시간·코어·메모리/코어) | (옵션까지 채워진 상태 유지) |
-| **5 계산·모니터** | 단계 5/6 · 계산 실행 및 모니터링 | RunBar(실행 상태 펄스 + 단계/SCF 반복/경과/현재 에너지 + **STOP**). 좌: **LogTerminal**(cp2k.out 라이브). 우: **ConvergenceChart**(SCF \|ΔE\| 로그축) + ConvStats | **라이브 미러로 전환**(상태·SCF 반복·마지막 ΔE·목표 + 로그) |
-| **6 리포트** | 단계 6/6 · 결과 리포트 | (계산 완료 전) 잠금 플레이스홀더: "리포트는 계산 완료 후 생성됩니다". 완료 시 밴드갭·DOS·수렴 요약 PDF (재구축 시 marked+KaTeX, §8) | (전체 진행 100%) |
+| **5 계산·모니터** | 단계 5/6 · 계산 실행 및 모니터링 | RunBar(실행 상태 펄스 + 단계/SCF 반복/경과/현재 에너지 + **STOP**). 좌: **LogTerminal**(cp2k.out 라이브). 우: **스텝별 ConvergenceChart**(SCF \|ΔE\| 로그축, `step_histories` 기준으로 step1→그래프1·step2→그래프2 … **스텝 탭 또는 스텝별 개별 차트**로 분리, 단일 통합 차트 금지) + ConvStats | **라이브 미러로 전환**(현재 스텝·SCF 반복·마지막 ΔE·목표 + 로그) |
+| **6 리포트** | 단계 6/6 · 결과 리포트 | (계산 완료 전) 잠금 플레이스홀더: "리포트는 계산 완료 후 생성됩니다". 완료 시 밴드갭·DOS + **스텝별 수렴 차트**(`step_histories` 기준으로 스텝마다 하나씩 분리, step5와 동일하게 스텝 탭/개별 차트 — 단일 통합 차트 아님) 요약 PDF (재구축 시 marked+KaTeX, §8) | (전체 진행 100%) |
 
 - **단계 이동/잠금**: 현재 단계 기준 한 단계 앞(`maxReached+1`)까지만 진입 허용, 그 이상은 레일에서 잠금(목업 `go()`/`renderRail()`). 키보드 ←/→ 지원(입력 포커스 시 제외). Next 라우팅에선 `router.push('/step-N')` + store의 `currentStep`/`maxReached`로 레일·진행 반영.
 - **루트 레이아웃**: `app/layout.tsx`는 페이퍼 배경 + 폰트(Fraunces/Inter/JetBrains Mono) + Provider. 글래스 컨테이너/배경 blob은 폐기(Lab Paper는 플랫).
 
-### 4.3 step-5 라이브 데이터 단일 소스 (목업 패턴)
-모니터링의 모든 수치는 **단일 소스 배열**에서 파생됩니다(목업: `scfDelta`/`scfEnergy`, `SCF_TARGET=1.0e-6`). 한 번의 `liveTick`이 ① 터미널 로그 라인, ② SCF 반복/현재 에너지, ③ 수렴 차트 점, ④ 우측 진행바·라이브 미러를 동시에 갱신합니다. 실제 구현에선 이 배열을 `/job-live-status` 폴링 응답(§5)으로 대체하되, "단일 소스 → 다중 뷰" 구조는 유지하세요(터미널·차트·요약이 어긋나지 않게).
+### 4.3 step-5 라이브 데이터 — 스텝별 소스 (목업 패턴)
+모니터링의 모든 수치는 **스텝별 수렴 이력(`step_histories`)** 에서 파생됩니다(스텝마다 `scfDelta`/`scfEnergy` 시퀀스, `SCF_TARGET=1.0e-6`). 한 번의 `liveTick`이 ① 터미널 로그 라인, ② 현재 스텝의 SCF 반복/현재 에너지, ③ **해당 스텝 차트의 점**(스텝 전환 시 다음 스텝 차트로 이동·생성), ④ 우측 진행바·라이브 미러를 동시에 갱신합니다. 실제 구현에선 이 이력을 `/job-live-status` 폴링 응답(§5)으로 대체하되, "스텝별 소스 → 다중 뷰" 구조는 유지하세요(터미널·차트·요약이 어긋나지 않게). **수렴 차트는 스텝마다 하나씩 분리**되며 단일 통합 차트로 합치지 않습니다(스텝 탭 또는 스텝별 개별 차트, §4.2 step-5/6).
 
 ### 4.4 우측 패널 step-aware 동작 (목업 확정)
 - **점진 채움**: 각 `.sum-block[data-fills="N"]`은 `maxReached >= N`일 때만 값 노출. 미도달 시 `is-pending`(ink-faint) + 자리표시 텍스트(badge 행은 "— 미선택", 옵션 블록은 "— 미설정", 그 외 "— 선택 전").
@@ -528,30 +543,44 @@ interface MoleculeViewerProps {
 현재 `app.js`의 DOMContentLoaded 클로저 `let` 전역(`currentStructureInfo`, `currentSubJobs`, `activeSubJobKey`, `currentInpOptions`, `currentJobName`, `currentStep`, `benchmarkStatus`, ...)과 `localStorage` 2키(`cp2k_agent_lang`, `cp2k_agent_session`)를 **Zustand + persist 미들웨어**로 포팅.
 
 ```ts
-// stores/wizard-store.ts
+// stores/wizard-store.ts (슬라이스 합성 + persist)
 interface WizardState {
-  currentStep: number;
-  structureInfo?: StructureInfo;
-  structuresInfo?: StructureInfo[];   // 다중 CIF
-  subJobs?: Record<string, SubJob>;   // 멀티잡
-  activeSubJobKey?: string;
-  inpOptions?: InpOptions;
-  jobName?: string;                   // 서버 폴더명 (data.directory)
-  benchmarkStatus?: { status: string; reports: unknown[] };
+  currentStep: number; maxReached: number;
+  structureInfo?: StructureInfo; structuresInfo?: StructureInfo[]; // 다중 CIF
+  selectedProperties: Record<string, boolean>;                    // 단일 물성(12개 중 1개)
+  planResult?: PlanResult; inpOptions?: InpOptions; generatedFiles?: GeneratedFile[];
+  // 런타임/잡 상태 — 메모리에만, persist 제외:
+  jobName?: string; subJobs?: Record<string, SubJob>; activeSubJobKey?: string;
+  jobLive?: JobLive; benchmarkStatus?: { status: string; reports: unknown[] };
   // actions
   setStep: (s: number) => void;
-  hydrateFromSession: () => void;
+  reset: () => void;            // "새 계산": 상태 초기화 + localStorage 비움
 }
+const INITIAL = { currentStep: 1, maxReached: 1, selectedProperties: {} /* …나머지는 undefined */ };
 export const useWizardStore = create<WizardState>()(
-  persist((set) => ({ /* ... */ }), {
-    name: "cp2k_agent_session",       // 기존 키 유지(호환)
-    partialize: (s) => ({ currentStep: s.currentStep, structureInfo: s.structureInfo,
-      structuresInfo: s.structuresInfo, subJobs: s.subJobs, activeSubJobKey: s.activeSubJobKey,
-      inpOptions: s.inpOptions, jobName: s.jobName, benchmarkStatus: s.benchmarkStatus }),
+  persist((set) => ({
+    ...(INITIAL as WizardState),
+    setStep: (currentStep) => set({ currentStep }),
+    reset: () => { useWizardStore.persist.clearStorage(); set(INITIAL as WizardState); },
+  }), {
+    name: "cp2k_agent_session",
+    version: 2,                 // 스키마 바뀌면 올림 → 옛 데이터 자동 폐기
+    migrate: () => undefined,   // 버전 불일치 시 폐기(깨진 상태 로드 방지)
+    // ✅ 입력만 영속. 런타임/잡 상태는 저장하지 않는다.
+    partialize: (s) => ({
+      currentStep: s.currentStep, maxReached: s.maxReached,
+      structureInfo: s.structureInfo, structuresInfo: s.structuresInfo,
+      selectedProperties: s.selectedProperties, planResult: s.planResult,
+      inpOptions: s.inpOptions, generatedFiles: s.generatedFiles,
+    }),
   })
 );
 ```
-> **버그 보존/수정 메모**: 현재 `restoreSession()`은 정의만 있고 **호출되지 않아 "Zero Token Recovery"가 실제로는 안 됨**(app.js:459). persist 미들웨어는 마운트 시 자동 rehydrate하므로 마이그레이션하면서 자동 복원이 정상화됨. 복원 후 `benchmarkStatus==="Running"`이면 벤치마크 폴링 재개, `currentStep===5 && jobName`이면 모니터링 폴링 자동 재개 로직을 store rehydrate 콜백(`onRehydrateStorage`)에서 트리거.
+> **저장 정책 (중요)**:
+> 1. **입력만 영속** — 구조/물성/플랜/옵션/생성파일/진행단계만 저장. **런타임·잡 상태(`jobName`/`subJobs`/`activeSubJobKey`/`jobLive`/`benchmarkStatus`/리포트)는 persist에서 제외.** 이유: 새로고침 시 죽은 잡으로 복원돼 "실행 중" 유령·폴링 자동재개 버그가 난다. 잡 상태를 빼면 새로고침 후 step-5가 깔끔히 제출(pre) 화면으로 돌아온다.
+> 2. **`version` + `migrate`(불일치 시 폐기)** — 스토어 구조를 바꾸면 옛 localStorage가 앱을 깨뜨릴 수 있으므로 버전을 올려 자동 폐기한다.
+> 3. **`reset()`("새 계산")** — 상태 초기화 + `persist.clearStorage()`. **사이드바 푸터("자동저장됨" 옆)에 "새 계산" 버튼**으로 노출하고, step-6의 "새 분석 시작"도 같은 `reset()`을 쓴다.
+> 4. **rehydrate 시 잡 폴링 자동재개는 하지 않는다**(잡 상태를 영속하지 않으므로 자연히 제거됨).
 >
 > 언어는 별도 store 또는 i18n provider로 분리(`cp2k_agent_lang` 키 유지). 단순 트리이거나 Provider 선호 시 Context로 대체 가능하나, persist 편의상 **Zustand 권장**.
 
@@ -599,10 +628,10 @@ function usePolling<T>(opts: UsePollingOptions<T>) {
 
 ### 5.4 차트 라이브러리 — **react-chartjs-2 채택** + 3Dmol
 - **수렴 차트**: 확정 목업의 SCF `|ΔE|` 차트는 Chart.js(**logarithmic y축**, `update('none')`, `toExponential` 툴팁/틱, 페이퍼 톤 grid/tick, `JetBrains Mono` 폰트)에 의존. **`react-chartjs-2`(Chart.js 래퍼)** 채택 — 목업 옵션 객체를 거의 그대로 이식. recharts는 logarithmic 축 표현에 추가 작업이 커 비권장. 색/폰트는 §2.2 `lib/tokens.ts`의 `CHART` 상수 사용(컴포넌트 계약 §3.10).
-- **3D 분자 뷰어**: **3Dmol.js** 채택(§3.11). CSS 변수를 못 읽으므로 원소 색은 `lib/tokens.ts`의 `VIEWER` 상수로 전달. 오프라인/로드 실패 시 정적 격자 SVG 폴백 필수.
+- **3D 분자 뷰어**: **3Dmol.js** 채택(§3.11). CSS 변수를 못 읽으므로 원소 색은 `lib/tokens.ts`의 `VIEWER` 상수로 전달. 오프라인/로드 실패 시 정적 격자 SVG 폴백 필수. **언마운트/재실행 시 `spin(false)` + WebGL 컨텍스트(캔버스) 해제 필수** — 미해제 시 단계 이동마다 컨텍스트가 누적되어 프리징(§3.11 정리 절차).
 - 재구축 시 추가될 다중 축/벤치마크 차트(§8)도 동일하게 react-chartjs-2 + JS 색 상수 패턴을 따른다.
 
-> **데모는 정적(백엔드 미연결)임**: `a-paper-hifi.html`의 SCF 스트림·메타·진행은 모두 클라이언트 시뮬레이션(단일 `scfDelta` 소스, §4.3)입니다. 실제 동작은 본 §5 폴링 + `docs/features/*/api.md` + `docs/contracts/data-models.md` 계약대로 구현해야 합니다.
+> **데모는 정적(백엔드 미연결)임**: 확정 디자인의 SCF 스트림·메타·진행은 모두 클라이언트 시뮬레이션(스텝별 `scfDelta` 소스, §4.3) 전제로 설계되었습니다. 실제 동작은 본 §5 폴링 + `docs/features/*/api.md` + `docs/contracts/data-models.md` 계약대로 구현해야 합니다.
 
 ---
 
@@ -618,20 +647,20 @@ function usePolling<T>(opts: UsePollingOptions<T>) {
 
 ## 7. 병렬 개발 연계 (Shared Component Contract)
 
-본 문서는 프런트엔드의 **공유 컴포넌트 계약**이다. 6개 화면(f1-structure ~ f6-benchmark) 담당자는 각자 `features/<도메인>/components`에서 화면을 조립하되, **색·폰트·간격·radius는 §2 Lab Paper 토큰만 사용**하고 **Button/Card/Badge/StatusBadge/Segmented/ChipToggle/FormField/Table/LogTerminal/ConvergenceChart/MoleculeViewer는 §3의 `components/ui` 공유 컴포넌트를 import**한다. 새 버튼/배지/상태색을 화면 안에서 임의 정의하지 않는다(변경이 필요하면 본 문서 + `docs/mockups/a-paper-hifi.html`을 함께 갱신해 합의). 이렇게 하면 상태색(accent/ok/oxblood)·헤어라인 카드·차트·뷰어 룩이 6개 화면에서 자동으로 일관되며, 각 담당은 데이터 패칭(§5)과 화면 조립에만 집중할 수 있다. **3-존 콕핏 셸·StepRail·SummaryPanel(§4)은 모든 화면이 공유**하므로 단계 진행 UX와 우측 요약 채움도 단일 소스에서 통제된다.
+본 문서는 프런트엔드의 **공유 컴포넌트 계약**이다. 6개 화면(f1-structure ~ f6-benchmark) 담당자는 각자 `features/<도메인>/components`에서 화면을 조립하되, **색·폰트·간격·radius는 §2 Lab Paper 토큰만 사용**하고 **Button/Card/Badge/StatusBadge/Segmented/ChipToggle/FormField/Table/LogTerminal/ConvergenceChart/MoleculeViewer는 §3의 `components/ui` 공유 컴포넌트를 import**한다. 새 버튼/배지/상태색을 화면 안에서 임의 정의하지 않는다(변경이 필요하면 본 문서를 갱신해 합의). 이렇게 하면 상태색(accent/ok/oxblood)·헤어라인 카드·차트·뷰어 룩이 6개 화면에서 자동으로 일관되며, 각 담당은 데이터 패칭(§5)과 화면 조립에만 집중할 수 있다. **3-존 콕핏 셸·StepRail·SummaryPanel(§4)은 모든 화면이 공유**하므로 단계 진행 UX와 우측 요약 채움도 단일 소스에서 통제된다.
 
 ---
 
 ## 8. 원본 frontend 대비 변경/추가/누락 (델타) ★
 
-확정 디자인(Lab Paper, `a-paper-hifi.html`)이 원본 바닐라 JS UI(`frontend/`) 대비 무엇이 달라졌는지의 기록. 재구축 담당자는 이 델타를 기준으로 범위를 잡습니다.
+확정 디자인(Lab Paper, 본 문서 기준)이 원본 바닐라 JS UI(`frontend/`) 대비 무엇이 달라졌는지의 기록. 재구축 담당자는 이 델타를 기준으로 범위를 잡습니다.
 
 ### 8.1 추가 (신규)
 - **3D 분자 뷰어(3Dmol.js)** — 원본엔 없던 기능. 원본은 텍스트 + 2D 차트만 제공했고, molecule PNG는 **미사용 에셋**이었음. 확정안은 step-1에서 sphere+stick 3D 뷰어(자동 회전, 오프라인 폴백)를 1급 컴포넌트로 채택(§3.11).
 - **3-존 레이아웃 + 우측 요약·진행 패널** — 원본은 **상단 가로 스테퍼 + 단일 컬럼 위저드**였음. 확정안은 좌측 StepRail + 가운데 Workspace + **우측 step-aware 요약/진행 패널**(접기/펼치기, 5단계 라이브 미러)의 콕핏으로 재구성(§4).
 
 ### 8.2 변경
-- **K-point 스캔 UI 제거 → 권장값 자동 적용**. 원본의 k-점 스캔/벤치마크식 탐색 화면은 확정안에서 제거하고, step-3에서 권장 k-격자(예: 6×6×6)를 기본값으로 자동 적용하는 단일 입력으로 대체.
+- **K-point 완전 제거**. 원본의 k-점 스캔/탐색 화면과 step-3의 k-격자 입력을 확정안에서 전부 제거했다(모든 계산 Gamma-point, k 관련 입력·표시 없음).
 - **시각 정체성 전면 교체**: slate 다크 + indigo/purple + 글래스모피즘 → **Lab Paper**(페이퍼/잉크/딥인디고/헤어라인/세리프 헤딩). 폰트도 Inter+Fira Code → **Fraunces + Inter + JetBrains Mono**.
 - **아이콘**: 이모지/혼재 → **Lucide SVG** 일원화.
 
@@ -641,7 +670,7 @@ function usePolling<T>(opts: UsePollingOptions<T>) {
 - **12-레벨 벤치마크** (`/api/benchmark/run`·`status`, 3초 폴링) — 목업에 화면 없음.
 - **4단계 플랜 인포그래픽**(FlowchartNode: cap/para/rect/diamond) — step-4는 MetaList + 자원 추정으로 단순화.
 - **6단계 리포트 렌더링**(marked + KaTeX) — step-6은 잠금 플레이스홀더만. 실제 PDF/마크다운+수식 렌더는 미구현.
-- **INP/SGE 코드 뷰어**(신택스 하이라이트), TDDFT/K-point 대시보드 등 도메인 카드 — §3.10 말미 "재구축 필요 카드" 목록 참조.
+- **INP/SGE 코드 뷰어**(신택스 하이라이트), TDDFT 대시보드 등 도메인 카드 — §3.10 말미 "재구축 필요 카드" 목록 참조.
 
 ### 8.4 정적 데모 한계
-`a-paper-hifi.html`은 **백엔드 미연결 정적 데모**입니다. SCF 로그·수렴 차트·진행률·요약 채움은 모두 클라이언트 시뮬레이션(단일 `scfDelta` 소스, §4.3)이며 실제 계산이 아닙니다. 실제 동작은 §5 폴링 규약 + `docs/features/<도메인>/api.md`(HTTP 계약) + `docs/contracts/data-models.md`(응답 타입)대로 구현해야 합니다.
+확정 디자인은 **백엔드 미연결 정적 데모**를 전제로 검증되었습니다. SCF 로그·수렴 차트·진행률·요약 채움은 모두 클라이언트 시뮬레이션(스텝별 `scfDelta` 소스, §4.3)이며 실제 계산이 아닙니다. 실제 동작은 §5 폴링 규약 + `docs/features/<도메인>/api.md`(HTTP 계약) + `docs/contracts/data-models.md`(응답 타입)대로 구현해야 합니다.

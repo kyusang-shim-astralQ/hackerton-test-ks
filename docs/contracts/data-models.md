@@ -8,7 +8,7 @@
 
 | ID | 이름 | 책임 |
 |----|------|------|
-| `f1-structure` | 구조 분석 | CIF 파싱 → `AtomInfo` 생성, K-point 캐시 |
+| `f1-structure` | 구조 분석 | CIF 파싱 → `AtomInfo` 생성 |
 | `f2-plan` | AI 플랜 생성 | `AtomInfo` + DFT 파라미터 → 시뮬레이션 단계(`PlanStep`) 설계 |
 | `f3-inp` | INP 생성 | 플랜 → CP2K `.inp` 파일 렌더링 |
 | `f4-jobs` | 작업 제출/모니터링 | `.inp` 제출(SGE), 실시간 상태 추적, 자가치유 |
@@ -35,25 +35,24 @@ f4-jobs      ── SimulationArtifacts (디스크) ─▶ f5-report
 
 1. [AtomInfo](#1-atominfo) — 정규화된 구조 정보 (SSOT)
 2. [AnalyzeCifResponse](#2-analyzecifresponse)
-3. [KpointCacheUpdate](#3-kpointcacheupdate)
-4. [PlanRequest](#4-planrequest)
-5. [PlanStep](#5-planstep) — 핵심 교차 계약
-6. [PlanResult](#6-planresult)
-7. [InpRequest](#7-inprequest)
-8. [GeneratedFile](#8-generatedfile)
-9. [GenerateInpResult](#9-generateinpresult)
-10. [SubmitRequest](#10-submitrequest)
-11. [SubmitJobResponse](#11-submitjobresponse)
-12. [JobStatus](#12-jobstatus)
-13. [StepHistory](#13-stephistory)
-14. [MultiMetadata](#14-multimetadata)
-15. [SimulationArtifacts](#15-simulationartifacts) — 디스크 파일 포맷
-16. [JobLiveStatusResponse](#16-joblivestatusresponse)
-17. [ReportRequest](#17-reportrequest)
-18. [ReportData](#18-reportdata)
-19. [BenchmarkRequest](#19-benchmarkrequest)
-20. [BenchmarkReport](#20-benchmarkreport)
-21. [BenchmarkLevelReport](#21-benchmarklevelreport)
+3. [PlanRequest](#3-planrequest)
+4. [PlanStep](#4-planstep) — 핵심 교차 계약
+5. [PlanResult](#5-planresult)
+6. [InpRequest](#6-inprequest)
+7. [GeneratedFile](#7-generatedfile)
+8. [GenerateInpResult](#8-generateinpresult)
+9. [SubmitRequest](#9-submitrequest)
+10. [SubmitJobResponse](#10-submitjobresponse)
+11. [JobStatus](#11-jobstatus)
+12. [StepHistory](#12-stephistory)
+13. [MultiMetadata](#13-multimetadata)
+14. [SimulationArtifacts](#14-simulationartifacts) — 디스크 파일 포맷
+15. [JobLiveStatusResponse](#15-joblivestatusresponse)
+16. [ReportRequest](#16-reportrequest)
+17. [ReportData](#17-reportdata)
+18. [BenchmarkRequest](#18-benchmarkrequest)
+19. [BenchmarkReport](#19-benchmarkreport)
+20. [BenchmarkLevelReport](#20-benchmarklevelreport)
 
 ---
 
@@ -66,8 +65,8 @@ f4-jobs      ── SimulationArtifacts (디스크) ─▶ f5-report
 > | 형태 | 트리거 | 부재 키 |
 > |------|--------|---------|
 > | **정상 경로** (success) | ASE 파싱 성공, 원자 ≥ 1 | (전체 키 존재) |
-> | **parse-failure 폴백** | `ase.io.read` 예외 | `cell_angles`, `smear_*` 부재. `element_indices`/`volume`/`kpoint_recommended`/`initial_guess_kpoint`는 존재(빈 값/기본값), `error` 추가 |
-> | **empty-CIF 폴백** | 파싱 성공했으나 원자 0개 (예: NEB용 빈 CIF) | `element_indices`/`volume`/`kpoint_recommended`/`initial_guess_kpoint`/`cell_angles`/`smear_*` 모두 부재, `error` 추가 |
+> | **parse-failure 폴백** | `ase.io.read` 예외 | `cell_angles`, `smear_*` 부재. `element_indices`/`volume`은 존재(빈 값/기본값), `error` 추가 |
+> | **empty-CIF 폴백** | 파싱 성공했으나 원자 0개 (예: NEB용 빈 CIF) | `element_indices`/`volume`/`cell_angles`/`smear_*` 모두 부재, `error` 추가 |
 
 | key | type | required | notes |
 |-----|------|:--------:|-------|
@@ -83,12 +82,9 @@ f4-jobs      ── SimulationArtifacts (디스크) ─▶ f5-report
 | `full_coord_text` | `str` | ✅ | CP2K `COORD` 섹션용 좌표 텍스트. 실패/빈CIF 시 `""`. **세 형태 모두 존재** |
 | `full_cell_text` | `str` | ✅ | `ABC` + `ALPHA_BETA_GAMMA` 텍스트. **세 형태 모두 존재**(폴백은 포맷 정밀도 없음) |
 | `use_scaled` | `bool` | ✅ | `SCALED` 좌표 모드 제안 여부(모든 좌표 절댓값 ≤ 1.2 & 원자수 > 0). 폴백은 항상 `False`. **세 형태 모두 존재** |
-| `kpoint_recommended` | `bool` | ⬜ | K-point 샘플링 권장(어떤 축 < 10 Å). 정상 경로 + parse-failure 폴백(`False`)에 존재. **empty-CIF 폴백에는 부재** |
-| `initial_guess_kpoint` | `str` | ⬜ | 권장 k-grid 예 `"2 2 1"`(공백 구분 3정수). 정상 경로 + parse-failure 폴백(`"1 1 1"`)에 존재. **empty-CIF 폴백에는 부재** |
 | `smear_recommended` | `bool` | ⬜ | `SMEAR` 권장 여부(금속/전이금속/triclinic/조건부 금속 판정). **정상 경로에만 존재** |
 | `smear_reason_ko` | `str` | ⬜ | SMEAR 권장 사유(한국어). **정상 경로에만 존재** |
 | `smear_reason_en` | `str` | ⬜ | SMEAR 권장 사유(영어). generator가 읽음. **정상 경로에만 존재** |
-| `verified_optimal_kpoint` | `str` | ⬜ | 선택적. 캐시/검증된 최적 k-point. inp생성·제출 다중분기에서 `req.kpoints`보다 우선 사용 |
 | `periodic` | `str` | ⬜ | 선택적. 없으면 generator가 `'XYZ'`로 fallback |
 | `error` | `str` | ⬜ | **파싱 실패/빈 CIF 시에만 존재**하는 예외 메시지. parse-failure = `str(e)`, empty-CIF = `'Empty CIF (No atoms)'` |
 
@@ -118,8 +114,6 @@ f4-jobs      ── SimulationArtifacts (디스크) ─▶ f5-report
   "full_coord_text": "      Ti   0.00000000   0.00000000   0.00000000\n      Ti   1.89650000   1.89650000   4.77950000\n      O    0.00000000   0.00000000   2.07620000",
   "full_cell_text": "      ABC   3.79300000   3.79300000   9.55900000\n      ALPHA_BETA_GAMMA  90.00000000  90.00000000  90.00000000",
   "use_scaled": false,
-  "kpoint_recommended": true,
-  "initial_guess_kpoint": "8 8 3",
   "smear_recommended": true,
   "smear_reason_ko": "전이금속 또는 희토류 원소가 포함되어 있어 d/f 오비탈의 축퇴로 인한 수렴 저하를 방지하기 위해 SMEAR 활성화가 권장됩니다.",
   "smear_reason_en": "Contains transition metal or lanthanide elements. Enabling SMEAR is recommended to prevent SCF convergence issues due to d/f orbital degeneracy."
@@ -141,8 +135,6 @@ f4-jobs      ── SimulationArtifacts (디스크) ─▶ f5-report
   "use_scaled": false,
   "full_coord_text": "",
   "full_cell_text": "      ABC 10.0 10.0 10.0\n      ALPHA_BETA_GAMMA 90.0 90.0 90.0",
-  "kpoint_recommended": false,
-  "initial_guess_kpoint": "1 1 1",
   "error": "Failed to parse CIF block"
 }
 ```
@@ -168,15 +160,14 @@ f4-jobs      ── SimulationArtifacts (디스크) ─▶ f5-report
 
 ## 2. AnalyzeCifResponse
 
-**설명**: `POST /analyze-cif` 응답. `atom_info`와 캐시 조회 결과(`content_hash`, `cached_kpoint`)를 함께 반환합니다. 프런트엔드는 `cached_kpoint`가 있으면 K-point 입력을 자동으로 채웁니다.
+**설명**: `POST /analyze-cif` 응답. `atom_info`와 `content_hash`를 함께 반환합니다.
 
 | key | type | required | notes |
 |-----|------|:--------:|-------|
 | `status` | `str` | ✅ | `'success'` 고정. 비-cif 확장자는 `400`, 처리 실패는 `500` |
 | `filename` | `str` | ✅ | 업로드 파일명 |
 | `atom_info` | [`AtomInfo`](#1-atominfo) | ✅ | 분석된 구조 정보 |
-| `content_hash` | `str` | ✅ | CIF 본문 SHA-256 hex(64자). `/update-kpoint-cache` 키로 재사용 |
-| `cached_kpoint` | `str \| null` | ✅ | 캐시된 최적 K-point 문자열 또는 `null` |
+| `content_hash` | `str` | ✅ | CIF 본문 SHA-256 hex(64자) |
 
 - **produced_by**: `f1-structure`
 - **consumed_by**: `f2-plan`, `f3-inp`, `f4-jobs` (프런트엔드 경유)
@@ -188,52 +179,13 @@ f4-jobs      ── SimulationArtifacts (디스크) ─▶ f5-report
   "status": "success",
   "filename": "TiO2_anatase.cif",
   "atom_info": { "filename": "TiO2_anatase.cif", "atom_count": 6, "atoms": ["...생략(AtomInfo 참조)..."] },
-  "content_hash": "a3f5c9e1b8d2740a6f1e2c3b4d5e6f70819aabbccddeeff00112233445566778",
-  "cached_kpoint": "8 8 3"
+  "content_hash": "a3f5c9e1b8d2740a6f1e2c3b4d5e6f70819aabbccddeeff00112233445566778"
 }
 ```
 
 ---
 
-## 3. KpointCacheUpdate
-
-**설명**: `POST /update-kpoint-cache` 요청 본문. 프런트가 작업 완료 후 검증된 최적 K-point를 CIF 해시 키로 영속 캐시(`kpoint_cache.json`)에 기록합니다. `content_hash`와 `kpoint`가 **모두 truthy일 때만** 저장됩니다.
-
-> ⚠️ **현재 구현 주의**: `app/features/structure/router.py`가 `kp_cache._cache[content_hash] = kpoint` 로 내부 dict에 직접 대입한 뒤 `_save_cache()`를 호출합니다(캡슐화 위반). clean 재설계 시 `save_by_hash(content_hash, kpoint)` 같은 public 메서드를 권장합니다.
-
-| key | type | required | notes |
-|-----|------|:--------:|-------|
-| `content_hash` | `str` | ✅ | `AnalyzeCifResponse.content_hash`에서 받은 SHA-256 해시 |
-| `kpoint` | `str` | ✅ | 저장할 최적 K-point 문자열 예 `"2 2 1"` |
-
-- **produced_by**: `f1-structure`
-- **consumed_by**: `f1-structure`
-
-### kpoint_cache.json 파일 구조
-
-키는 CIF 본문 SHA-256 hexdigest(동적 키, 고정 키 이름 없음), 값은 K-point 문자열입니다. 타입 힌트는 `Dict[str, str]`.
-
-### 예시 (요청 본문)
-
-```json
-{
-  "content_hash": "a3f5c9e1b8d2740a6f1e2c3b4d5e6f70819aabbccddeeff00112233445566778",
-  "kpoint": "2 2 1"
-}
-```
-
-### 예시 (kpoint_cache.json 디스크 구조)
-
-```json
-{
-  "a3f5c9e1b8d2740a6f1e2c3b4d5e6f70819aabbccddeeff00112233445566778": "2 2 1",
-  "b1029384756acefdb1029384756acefdb1029384756acefdb1029384756acefd": "4 4 4"
-}
-```
-
----
-
-## 4. PlanRequest
+## 3. PlanRequest
 
 **설명**: `POST /generate-plan` 요청 본문(Pydantic). `atom_info` + DFT 파라미터로 LLM 플랜 생성을 요청합니다.
 
@@ -242,7 +194,7 @@ f4-jobs      ── SimulationArtifacts (디스크) ─▶ f5-report
 | key | type | required | notes |
 |-----|------|:--------:|-------|
 | `atom_info` | [`AtomInfo`](#1-atominfo) | ✅ | 구조 정보 |
-| `property` | `str` | ✅ | 계산 물성 예 `'energy'`, `'geo_opt'`, `'absorption'`. `PROPERTY_SECTION_MAP` 키로 `lower()` 사용 |
+| `property` | `str` | ✅ | 계산 물성. **12종 중 단 하나만 선택하는 단일 문자열**(리스트/다중 선택 아님). 예 `'energy'`, `'geo_opt'`, `'absorption'`. `PROPERTY_SECTION_MAP` 키로 `lower()` 사용 |
 | `basis_set` | `str` | ✅ | 기저함수 세트 예 `'DZVP-MOLOPT-GTH'` |
 | `cutoff` | `float` | ✅ | 평면파 cutoff (Ry) |
 | `rel_cutoff` | `float` | ✅ | relative cutoff |
@@ -255,7 +207,6 @@ f4-jobs      ── SimulationArtifacts (디스크) ─▶ f5-report
 | `smear_temp` | `float` | ⬜ | 기본 `300.0` |
 | `custom_options` | `Dict[str,Any]` | ⬜ | 기본 `{}`. 경로기반 옵션 오버라이드, `OPTION_TOKEN_MAP`으로 토큰 보강 |
 | `lang` | `str` | ⬜ | 기본 `'ko'`. `'en'`이면 프롬프트 영어화. **이 모델에만 존재** |
-| `kpoints` | `str \| null` | ⬜ | 기본 `None`. `None`이면 Gamma-point |
 | `eps_scf` | `str` | ⬜ | 기본 `'1.0E-6'` |
 | `periodic` | `str` | ⬜ | 기본 `'XYZ'` |
 | `max_scf` | `int \| null` | ⬜ | 기본 `None` |
@@ -287,7 +238,6 @@ f4-jobs      ── SimulationArtifacts (디스크) ─▶ f5-report
   "smear_temp": 300.0,
   "custom_options": { "vdw_corr": "DFTD3" },
   "lang": "ko",
-  "kpoints": "8 8 3",
   "eps_scf": "1.0E-6",
   "periodic": "XYZ",
   "max_scf": null,
@@ -301,7 +251,7 @@ f4-jobs      ── SimulationArtifacts (디스크) ─▶ f5-report
 
 ---
 
-## 5. PlanStep
+## 4. PlanStep
 
 **설명**: AI가 생성하는 단일 플랜 스텝. `/generate-plan` 응답의 `steps[]` 요소이며, `/generate-inp`·`/submit-job` 요청의 `steps[]`로 다시 전달되는 **기능 경계를 가로지르는 핵심 계약**입니다. 소비자(generator/orchestrator)는 `.get()`으로 방어적으로 읽습니다.
 
@@ -352,14 +302,14 @@ f4-jobs      ── SimulationArtifacts (디스크) ─▶ f5-report
 
 ---
 
-## 6. PlanResult
+## 5. PlanResult
 
 **설명**: `POST /generate-plan` 응답. `expert_tip` + `steps` + 에코된 `atom_info`(SSOT 동기화). AI JSON 파싱 실패 시 `steps=[]`로 폴백합니다.
 
 | key | type | required | notes |
 |-----|------|:--------:|-------|
 | `expert_tip` | `str` | ✅ | 시스템 특성 기반 전략 요약. 파싱 실패 시 폴백 문구(ko/en) |
-| `steps` | `List[`[`PlanStep`](#5-planstep)`]` | ✅ | AI 설계 단계 목록. 파싱 실패 시 `[]` |
+| `steps` | `List[`[`PlanStep`](#4-planstep)`]` | ✅ | AI 설계 단계 목록. 파싱 실패 시 `[]` |
 | `atom_info` | [`AtomInfo`](#1-atominfo) | ✅ | 요청 `atom_info`를 그대로 에코 (SSOT, `data['atom_info']=req.atom_info`) |
 
 - **produced_by**: `f2-plan`
@@ -380,14 +330,14 @@ f4-jobs      ── SimulationArtifacts (디스크) ─▶ f5-report
 
 ---
 
-## 7. InpRequest
+## 6. InpRequest
 
 **설명**: `POST /generate-inp` 요청 본문(Pydantic). PlanRequest 필드 대부분 + `steps` + `multi_atom_info`. **`lang` 필드는 없습니다.**
 
 | key | type | required | notes |
 |-----|------|:--------:|-------|
 | `atom_info` | [`AtomInfo`](#1-atominfo) | ✅ | 단일 구조 정보 |
-| `steps` | `List[`[`PlanStep`](#5-planstep)`]` | ✅ | 플랜 단계 목록. `selected`/`exclude`/`inp_options`/`run_type` 키를 읽음 |
+| `steps` | `List[`[`PlanStep`](#4-planstep)`]` | ✅ | 플랜 단계 목록. `selected`/`exclude`/`inp_options`/`run_type` 키를 읽음 |
 | `property` | `str` | ✅ | 계산 물성 |
 | `basis_set` | `str` | ✅ | 기저함수 세트 |
 | `cutoff` | `float` | ✅ | cutoff (Ry) |
@@ -400,7 +350,6 @@ f4-jobs      ── SimulationArtifacts (디스크) ─▶ f5-report
 | `use_smear` | `bool` | ⬜ | 기본 `False`. multi분기는 struct값 우선 |
 | `smear_temp` | `float` | ⬜ | 기본 `300.0` |
 | `custom_options` | `Dict[str,Any]` | ⬜ | 기본 `{}`. `merge_custom_options`로 step별 병합 |
-| `kpoints` | `str \| null` | ⬜ | 기본 `None`. multi분기는 `verified_optimal_kpoint` → `initial_guess_kpoint` → `req.kpoints` 순 |
 | `eps_scf` | `str` | ⬜ | 기본 `'1.0E-6'` |
 | `periodic` | `str` | ⬜ | 기본 `'XYZ'` |
 | `max_scf` | `int \| null` | ⬜ | 기본 `None` |
@@ -429,7 +378,6 @@ f4-jobs      ── SimulationArtifacts (디스크) ─▶ f5-report
   "functional": "PBE",
   "method": "GPW",
   "use_smear": true,
-  "kpoints": "8 8 3",
   "custom_options": {},
   "multi_atom_info": null
 }
@@ -437,7 +385,7 @@ f4-jobs      ── SimulationArtifacts (디스크) ─▶ f5-report
 
 ---
 
-## 8. GeneratedFile
+## 7. GeneratedFile
 
 **설명**: 생성된 단일 CP2K `.inp` 파일. `/generate-inp` 응답 `generated_files[]` 요소이자, `/submit-job` 요청 `files[]`(Pydantic `FileItem`)의 **호환 형태**입니다. 기능 경계(inp생성 → 제출)를 가로지릅니다.
 
@@ -462,14 +410,14 @@ f4-jobs      ── SimulationArtifacts (디스크) ─▶ f5-report
 
 ---
 
-## 9. GenerateInpResult
+## 8. GenerateInpResult
 
 **설명**: `POST /generate-inp` 응답. 생성된 `.inp` 파일 목록.
 
 | key | type | required | notes |
 |-----|------|:--------:|-------|
 | `status` | `str` | ✅ | `'success'` 고정 |
-| `generated_files` | `List[`[`GeneratedFile`](#8-generatedfile)`]` | ✅ | 생성된 `.inp` 파일 리스트 |
+| `generated_files` | `List[`[`GeneratedFile`](#7-generatedfile)`]` | ✅ | 생성된 `.inp` 파일 리스트 |
 
 - **produced_by**: `f3-inp`
 - **consumed_by**: `f4-jobs`
@@ -488,17 +436,17 @@ f4-jobs      ── SimulationArtifacts (디스크) ─▶ f5-report
 
 ---
 
-## 10. SubmitRequest
+## 9. SubmitRequest
 
 **설명**: `POST /submit-job` 요청 본문(Pydantic). 생성된 `.inp`(`files`) 또는 자동생성으로 작업을 제출합니다.
 
-> ⚠️ **기본값이 다른 모델과 다름**: `cutoff=400.0`, `rel_cutoff=50.0`, `functional='PBE'`, `basis_set='DZVP-MOLOPT-GTH'`, `property='energy'` (다른 모델들에서는 이 필드들이 필수). `property`가 `absorption`/`emission`이면 `kpoints`를 강제 `None`(Gamma)으로 합니다.
+> ⚠️ **기본값이 다른 모델과 다름**: `cutoff=400.0`, `rel_cutoff=50.0`, `functional='PBE'`, `basis_set='DZVP-MOLOPT-GTH'`, `property='energy'` (다른 모델들에서는 이 필드들이 필수).
 
 | key | type | required | notes |
 |-----|------|:--------:|-------|
-| `files` | `List[`[`GeneratedFile`](#8-generatedfile)`] \| null` | ⬜ | 기본 `None`. 제출할 `.inp` 파일(`FileItem`). `None`이면 오케스트레이터가 자동 생성 |
+| `files` | `List[`[`GeneratedFile`](#7-generatedfile)`] \| null` | ⬜ | 기본 `None`. 제출할 `.inp` 파일(`FileItem`). `None`이면 오케스트레이터가 자동 생성 |
 | `atom_info` | [`AtomInfo`](#1-atominfo) | ✅ | 구조 정보 |
-| `steps` | `List[`[`PlanStep`](#5-planstep)`]` | ✅ | 플랜 단계 목록 |
+| `steps` | `List[`[`PlanStep`](#4-planstep)`]` | ✅ | 플랜 단계 목록 |
 | `job_name` | `str \| null` | ⬜ | 기본 `None`. 폴더명. 없으면 `job_{timestamp}` |
 | `multi_atom_info` | `List[`[`AtomInfo`](#1-atominfo)`] \| null` | ⬜ | 기본 `None`. `len > 1`이면 다중구조 병렬 제출 |
 | `cutoff` | `float` | ⬜ | **기본 `400.0`** |
@@ -511,7 +459,6 @@ f4-jobs      ── SimulationArtifacts (디스크) ─▶ f5-report
 | `multiplicity` | `int` | ⬜ | 기본 `1` |
 | `use_smear` | `bool` | ⬜ | 기본 `False` |
 | `smear_temp` | `float` | ⬜ | 기본 `300.0` |
-| `kpoints` | `str \| null` | ⬜ | 기본 `None` |
 | `property` | `str` | ⬜ | **기본 `'energy'`** |
 | `custom_options` | `Dict[str,Any]` | ⬜ | 기본 `{}`. `expert_tip` 키를 오케스트레이터에 전달 |
 | `eps_scf` | `str` | ⬜ | 기본 `'1.0E-6'` |
@@ -545,14 +492,13 @@ f4-jobs      ── SimulationArtifacts (디스크) ─▶ f5-report
   "basis_set": "DZVP-MOLOPT-GTH",
   "property": "geo_opt",
   "use_smear": true,
-  "kpoints": "8 8 3",
   "custom_options": { "expert_tip": "SMEAR 활성화 권장" }
 }
 ```
 
 ---
 
-## 11. SubmitJobResponse
+## 10. SubmitJobResponse
 
 **설명**: `POST /submit-job` 응답. 단일/다중구조에 따라 형태가 다릅니다. `directory`와 (다중 시) `sub_jobs.job_key`는 이후 `/job-live-status`·`/generate-report` 조회 키가 됩니다.
 
@@ -596,7 +542,7 @@ f4-jobs      ── SimulationArtifacts (디스크) ─▶ f5-report
 
 ---
 
-## 12. JobStatus
+## 11. JobStatus
 
 **설명**: 오케스트레이터가 `job_status.json`에 영속화하고 `get_job_status`가 반환하는 단일 작업 상태. `/job-live-status` 단일 응답 및 프런트 실시간 그래프/로그/진행률 소스입니다. `message`/`healing_history`/`logs`는 응답 직전 문자열화되며, `job_key`가 주입됩니다.
 
@@ -625,8 +571,8 @@ f4-jobs      ── SimulationArtifacts (디스크) ─▶ f5-report
 | `macro_progress` | `float` | ⬜ | 0~100 매크로 진행률(`count/max_geo*100`) |
 | `tddft_progress` | `{step:int,conv:float,converged_states:int,total_states:int} \| null` | ⬜ | TDDFPT Davidson 반복 진행 |
 | `expert_tip` | `str \| null` | ⬜ | submit 시 `custom_options.expert_tip` |
-| `steps` | `List[`[`PlanStep`](#5-planstep)`]` | ✅ | 재인덱싱된 활성 단계 |
-| `step_histories` | `Dict[str, `[`StepHistory`](#13-stephistory)`]` | ✅ | 단계ID(`str(step_idx)`) → 이력 매핑 |
+| `steps` | `List[`[`PlanStep`](#4-planstep)`]` | ✅ | 재인덱싱된 활성 단계 |
+| `step_histories` | `Dict[str, `[`StepHistory`](#12-stephistory)`]` | ✅ | 단계ID(`str(step_idx)`) → 이력 매핑 |
 | `suite_params` | `Dict[str,Any]` | ⬜ | 재제출/재개용 전 파라미터 스냅샷(`job_dir`,`steps`,`atom_info`,`lang`,DFT파라미터) |
 | `job_key` | `str` | ✅ | `get_job_status` 반환 시 주입되는 조회 키(DB 원본엔 없음) |
 
@@ -668,7 +614,7 @@ f4-jobs      ── SimulationArtifacts (디스크) ─▶ f5-report
     "lang": "ko",
     "cutoff": 600.0, "rel_cutoff": 60.0, "functional": "PBE", "basis_set": "DZVP-MOLOPT-GTH",
     "method": "GPW", "scf_algo": "OT", "charge": 0, "multiplicity": 1,
-    "use_smear": true, "smear_temp": 300.0, "kpoints": "8 8 3"
+    "use_smear": true, "smear_temp": 300.0
   },
   "job_key": "TiO2_geoopt_run"
 }
@@ -676,7 +622,7 @@ f4-jobs      ── SimulationArtifacts (디스크) ─▶ f5-report
 
 ---
 
-## 13. StepHistory
+## 12. StepHistory
 
 **설명**: `JobStatus.step_histories`의 각 단계 값(`step_histories[str(step_idx)]`). 단계별 그래프용 시계열입니다. 오케스트레이터 초기화 형태(`start_job_suite`)와 `/job-live-status` 동적복원 형태가 약간 다릅니다.
 
@@ -723,7 +669,7 @@ f4-jobs      ── SimulationArtifacts (디스크) ─▶ f5-report
 
 ---
 
-## 14. MultiMetadata
+## 13. MultiMetadata
 
 **설명**: 다중구조 제출 시 parent `job_dir/multi_metadata.json`에 기록되는 메타데이터. `/job-live-status`가 다중작업을 집계하고 `/generate-report`가 비교 리포트를 트리거하는 핵심 신호입니다.
 
@@ -735,7 +681,7 @@ f4-jobs      ── SimulationArtifacts (디스크) ─▶ f5-report
 | `parent_job_key` | `str` | ✅ | 부모 job 폴더명(`custom_name`) |
 | `sub_jobs` | `List[{filename:str, job_key:str}]` | ✅ | 각 하위작업의 원본 파일명과 조회 키. reporter가 `filename`(safe_name 경로 해석/비교 키)과 `job_key`(폴백 경로)를 `.get`으로 읽음 |
 | `property` | `str` | ✅ | 물성 타입 |
-| `steps` | `List[`[`PlanStep`](#5-planstep)`]` | ✅ | 단계 목록 |
+| `steps` | `List[`[`PlanStep`](#4-planstep)`]` | ✅ | 단계 목록 |
 | `timestamp` | `str` | ✅ | `YYYYmmdd_HHMMSS` |
 
 - **produced_by**: `f4-jobs`
@@ -761,7 +707,7 @@ f4-jobs      ── SimulationArtifacts (디스크) ─▶ f5-report
 
 ---
 
-## 15. SimulationArtifacts
+## 14. SimulationArtifacts
 
 **설명**: `f4`(또는 `f6`)가 작업 실행 시 `simulations/{directory}/` 하위에 기록하는 **디스크 산출물 계약**. `f5-report`가 `JobStatus`가 아니라 실제로 의존하는 두 번째 f4 산출물입니다(첫째는 `MultiMetadata`).
 
@@ -774,7 +720,7 @@ f4-jobs      ── SimulationArtifacts (디스크) ─▶ f5-report
 | `*.out` | `file (text)` | ✅ | CP2K 표준 출력 로그. reporter가 `'ENERGY\| Total FORCE_EVAL ...'` 및 `PHYSICS_PATTERNS` 정규식으로 총에너지/12종 물성 추출. `-r-`/`BAND` 접두 `.out`은 단일 리포트 walk에서 제외 규칙 있음 |
 | `*.pdos` | `file (text)` | ⬜ | dos/band 물성 시 보조. a.u. → eV(`×27.2114`) 변환, fermi/gap 파싱(`parse_pdos_file`). occupation > 0.1 점유/비점유 판별 |
 | `*.bs` | `file (text)` | ⬜ | band structure. `'# Point N'` 분할로 HOMO-LUMO gap(eV) 계산(`parse_bs_file`) |
-| `multi_metadata.json` | `file (json)` | ⬜ | 존재 시 다중 비교 분기 트리거([`MultiMetadata`](#14-multimetadata) 형태). 부재 시 단일 리포트 |
+| `multi_metadata.json` | `file (json)` | ⬜ | 존재 시 다중 비교 분기 트리거([`MultiMetadata`](#13-multimetadata) 형태). 부재 시 단일 리포트 |
 
 - **produced_by**: `f4-jobs`
 - **consumed_by**: `f5-report`
@@ -802,9 +748,9 @@ simulations/TiO2_geoopt_run/
 
 ---
 
-## 16. JobLiveStatusResponse
+## 15. JobLiveStatusResponse
 
-**설명**: `GET /job-live-status/{job_key}` 응답. `multi_metadata.json` 유무로 단일/다중이 갈립니다. 단일은 [`JobStatus`](#12-jobstatus) 형태(또는 파일시스템 동적복원), 다중은 하위작업 상태 집계입니다.
+**설명**: `GET /job-live-status/{job_key}` 응답. `multi_metadata.json` 유무로 단일/다중이 갈립니다. 단일은 [`JobStatus`](#11-jobstatus) 형태(또는 파일시스템 동적복원), 다중은 하위작업 상태 집계입니다.
 
 | key | type | required | notes |
 |-----|------|:--------:|-------|
@@ -812,10 +758,10 @@ simulations/TiO2_geoopt_run/
 | `is_multi` | `bool` | ⬜ | 다중작업일 때만 `true` |
 | `sub_jobs` | `List[{filename:str, job_key:str, status:str}]` | ⬜ | 다중일 때 하위작업별 상태. `status`는 `'Completed'`/`'Failed'`/`'Running'`으로 정규화 |
 | `message` | `str` | ⬜ | 다중일 때 요약 메시지 |
-| `step_histories` | `Dict[str, `[`StepHistory`](#13-stephistory)`]` | ⬜ | 단일 = 시계열 그래프 데이터, 다중 = `{}` 빈 dict |
+| `step_histories` | `Dict[str, `[`StepHistory`](#12-stephistory)`]` | ⬜ | 단일 = 시계열 그래프 데이터, 다중 = `{}` 빈 dict |
 | `job_key` | `str` | ⬜ | 단일 동적복원 시 포함 |
 
-> 단일 작업 응답은 [`JobStatus`](#12-jobstatus)의 전체 키를 그대로 포함합니다(위 표는 단일/다중을 가르는 핵심 키만 명시).
+> 단일 작업 응답은 [`JobStatus`](#11-jobstatus)의 전체 키를 그대로 포함합니다(위 표는 단일/다중을 가르는 핵심 키만 명시).
 
 - **produced_by**: `f4-jobs`
 - **consumed_by**: `f4-jobs`
@@ -837,9 +783,9 @@ simulations/TiO2_geoopt_run/
 
 ---
 
-## 17. ReportRequest
+## 16. ReportRequest
 
-**설명**: `POST /generate-report` 요청 본문. `job_dir`([`SubmitJobResponse.directory`](#11-submitjobresponse))와 물성/언어를 받아 리포트를 생성합니다.
+**설명**: `POST /generate-report` 요청 본문. `job_dir`([`SubmitJobResponse.directory`](#10-submitjobresponse))와 물성/언어를 받아 리포트를 생성합니다.
 
 | key | type | required | notes |
 |-----|------|:--------:|-------|
@@ -862,7 +808,7 @@ simulations/TiO2_geoopt_run/
 
 ---
 
-## 18. ReportData
+## 17. ReportData
 
 **설명**: `POST /generate-report` 응답(`{status:'success', **report_data}`). 마크다운 리포트 본문과 요약. 단일/다중에 따라 `summary` 형태가 다릅니다.
 
@@ -916,7 +862,7 @@ simulations/TiO2_geoopt_run/
 
 ---
 
-## 19. BenchmarkRequest
+## 18. BenchmarkRequest
 
 **설명**: `POST /api/benchmark/run` 요청 본문(Pydantic). 벤치마크할 레벨 목록(`levels`)과 세션ID + DFT 파라미터.
 
@@ -973,7 +919,7 @@ simulations/TiO2_geoopt_run/
 
 ---
 
-## 20. BenchmarkReport
+## 19. BenchmarkReport
 
 **설명**: 벤치마크 전역 진행상태(`benchmark_manager.results`). `GET /api/benchmark/status` 응답이며 `/api/benchmark/run`에서 상태 점유에 사용됩니다. 프런트 실시간 폴링 소스입니다.
 
@@ -982,7 +928,7 @@ simulations/TiO2_geoopt_run/
 | `status` | `str` | ✅ | `'Idle'`(초기), `'Running'`, `'Finished'`(종료 시 finally), `'Failure'`(루프 치명 오류) |
 | `current_level` | `int` | ✅ | 현재 레벨(0=시작 전, 1~12) |
 | `total_levels` | `int` | ✅ | `12` 고정 |
-| `reports` | `List[`[`BenchmarkLevelReport`](#21-benchmarklevelreport)`]` | ✅ | 레벨별 결과 12슬롯. `reports[level-1]`에 저장 |
+| `reports` | `List[`[`BenchmarkLevelReport`](#20-benchmarklevelreport)`]` | ✅ | 레벨별 결과 12슬롯. `reports[level-1]`에 저장 |
 | `logs` | `List[str]` | ✅ | 실시간 로그(한국어/이모지 라인) |
 | `logs_pos` | `int` | ⬜ | `calculation.out` 실시간 펌프용 seek 오프셋. 단계 전환 시 `0`으로 리셋 |
 
@@ -1007,7 +953,7 @@ simulations/TiO2_geoopt_run/
 
 ---
 
-## 21. BenchmarkLevelReport
+## 20. BenchmarkLevelReport
 
 **설명**: `BenchmarkReport.reports[]` 요소. 에이전트 vs 공식 결과 정확도 비교. 레벨 → 물성 매핑(`1 geo_opt` … `12 hirshfeld`)을 따릅니다.
 
@@ -1048,7 +994,6 @@ simulations/TiO2_geoopt_run/
 |------|------|------|
 | `AtomInfo` | f1 | f2, f3, f4, f6 |
 | `AnalyzeCifResponse` | f1 | (프런트) |
-| `KpointCacheUpdate` | f1 | f1 |
 | `PlanRequest` | f2 | f2 |
 | `PlanStep` | f2 | f3, f4, f6 |
 | `PlanResult` | f2 | f6 |

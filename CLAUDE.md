@@ -40,8 +40,7 @@
   - `docs/contracts/data-models.md` — 기능 경계를 넘나드는 데이터 계약(필드/타입/예시)
   - `docs/features/<도메인>/api.md` — 기능별 HTTP 계약. 도메인 6개: **f1-structure · f2-plan · f3-inp · f4-jobs · f5-report · f6-benchmark**
 - **디자인 (프런트):**
-  - `docs/design-system.md` — 확정 디자인 **Lab Paper**: 토큰·3-존 레이아웃·**CSS 함정(§4.5)**·컴포넌트
-  - `docs/mockups/a-paper-hifi.html` — 픽셀 단위 시각 기준(source of truth)
+  - `docs/design-system.md` — 확정 디자인 **Lab Paper** 및 **시각 기준(source of truth)**: 토큰·3-존 레이아웃·**CSS 함정(§4.5)**·컴포넌트
 - **구조:**
   - `docs/backend-structure.md` — 백엔드 폴더 규약(package-by-feature)
   - `docs/ARCHITECTURE.md` — 전체 기능 지도·의존성 그래프
@@ -49,7 +48,7 @@
   - `docs/build-prompts/00-README.md` — 사용법·순서·기대치
   - `docs/build-prompts/WORKPLAN.md` — **분업·2시간 타임라인·데모 시나리오**
   - `docs/build-prompts/MVP-SCOPE.md` — **무엇을 진짜로/목으로** (백지 MVP 경계)
-  - `01-foundation`+`be-01-foundation`(파운데이션), `02~07`+`be-02~07`(기능별 FE+BE)
+  - `fe/01-foundation`+`be/01-foundation`(파운데이션), `fe/02~07`+`be/02~07`(기능별 FE+BE)
 
 > 규칙: 디자인은 `design-system.md`, 데이터/엔드포인트는 해당 `api.md`+`data-models.md`를 **단일 소스**로 삼는다. 토큰·필드를 임의로 만들지 않는다.
 
@@ -68,10 +67,10 @@
   `backend/app/{ main.py, core/(config·llm·sge), schemas/common.py, shared/, features/<f1..f6>/(router·service·schemas).py }`
 - **Frontend:** **Next.js(App Router) + TypeScript + Tailwind + shadcn/ui**, 디자인 **Lab Paper(`docs/design-system.md`)**. 대시보드는 폴링으로 작업 상태 표시.
 - **AI:** Anthropic Claude — 최신·최강 모델. 모델 id·파라미터·가격은 기억 말고 **`claude-api` 스킬 확인**.
-- **env 키:** **`CLAUDE_API_KEY`** (기존 코드 `generator/reporter/self_healing`·빌드 프롬프트와 일치). 하드코딩 금지, Secrets/.env.
+- **env 키:** **`CLAUDE_API_KEY`**(LLM) + **클러스터(SSH/SGE) `USE_SGE`·`CLUSTER_HOST`/`CLUSTER_PORT`/`CLUSTER_USER`/`CLUSTER_PASSWORD`·`CLUSTER_REMOTE_ROOT`·`CLUSTER_QUEUE`·`CLUSTER_PE`·`CLUSTER_MPI_RANKS`·`CP2K_ROOT`/`CP2K_DATA_DIR`/`CP2K_MPIEXEC`/`CP2K_SETVARS`**(f4 실제 제출용). **전부 하드코딩 금지 — `.env`(gitignore)만**; 특히 `CLUSTER_PASSWORD`는 로그·응답·문서에도 노출 금지.
 - **포트:** backend `:8000`, frontend `:3000` (`NEXT_PUBLIC_API_BASE=http://localhost:8000`).
 - **배포(선택):** Replit(Autoscale) 등. 로컬 시뮬레이션은 위 :8000/:3000.
-- 데모는 가능한 **실제 결과**로. 클러스터 없는 환경은 `MVP-SCOPE.md`의 **목 모드(`NEXT_PUBLIC_MOCK=1`)** 로 6단계 전체를 끝까지 시연.
+- 데모는 가능한 **실제 결과**로: 클러스터 연결 시 **`USE_SGE=1`**로 f4가 실제 `qsub` 제출→결과로 f5가 실측 리포트. 클러스터 없으면 **`USE_SGE=0`**(백엔드 목) + 프런트 **`NEXT_PUBLIC_MOCK=1`**로 6단계 전체를 끝까지 시연.
 
 ### 폴더 = 소유권 (병렬 충돌 방지)
 **한 사람이 한 기능을 풀스택으로 소유** — 자기 것만 건드린다:
@@ -163,11 +162,15 @@ cd backend && pip install -r requirements.txt && uvicorn app.main:app --reload -
 cd frontend && npm install && npm run dev
 
 # 환경변수
-# backend/.env
+# backend/.env  (값은 .env에만 — 절대 커밋 금지, .gitignore 확인)
 CLAUDE_API_KEY=...
+USE_SGE=1                 # 1=실제 SGE(SSH) 제출, 0=목 스트림 폴백
+CLUSTER_HOST=...  CLUSTER_PORT=22  CLUSTER_USER=...  CLUSTER_PASSWORD=...
+CLUSTER_REMOTE_ROOT=...  CLUSTER_QUEUE=...  CLUSTER_PE=...  CLUSTER_MPI_RANKS=...
+CP2K_ROOT=...  CP2K_DATA_DIR=...  CP2K_MPIEXEC=...  CP2K_SETVARS=...
 # frontend/.env.local
 NEXT_PUBLIC_API_BASE=http://localhost:8000
-NEXT_PUBLIC_MOCK=1        # 클러스터 없이 f4/f5/f6 목 시연 (통합 시 0)
+NEXT_PUBLIC_MOCK=0        # 실제 백엔드 연결(USE_SGE=1). 클러스터 없이 목만 시연할 땐 1
 ```
 
 ---

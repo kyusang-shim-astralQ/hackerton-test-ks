@@ -47,7 +47,6 @@
 | `use_smear` | `bool` | ❌ | `false` | SMEAR 사용 여부. **다중 분기에서는 구조별 `struct["use_smear"]`가 우선**(키 존재 시) |
 | `smear_temp` | `float` | ❌ | `300.0` | 전자온도. 다중 분기에서는 구조별 `struct["smear_temp"]` 우선 |
 | `custom_options` | `Dict[str,Any]` | ❌ | `{}` | 경로기반 옵션 오버라이드. `merge_custom_options`로 step별 병합 |
-| `kpoints` | `str \| null` | ❌ | `null` | k-grid 예 `"2 2 1"`. `null`이면 Gamma-point. **다중 분기 우선순위(3단계): `verified_optimal_kpoint` → `initial_guess_kpoint` → `req.kpoints`** |
 | `eps_scf` | `str` | ❌ | `"1.0E-6"` | SCF 수렴 임계값 |
 | `periodic` | `str` | ❌ | `"XYZ"` | 주기성 |
 | `max_scf` | `int \| null` | ❌ | `null` | 최대 SCF 스텝 |
@@ -59,8 +58,6 @@
 | `multi_atom_info` | `List[AtomInfo] \| null` | ❌ | `null` | **`len > 1`이면 구조별 개별 `.inp` 생성 분기**. 그 외(`null`/`len<=1`)에는 단일 분기 |
 
 > **주의 — `lang` 필드 없음**: `InpRequest`는 `PlanRequest`와 달리 `lang` 필드를 갖지 않는다. `.inp` 텍스트는 언어 중립적이므로 추가하지 말 것.
-
-> **주의 — 다중 분기 k-point 우선순위는 3단계로 고정**: f3-inp의 multi 분기 k-point 결정은 정확히 `verified_optimal_kpoint` → `initial_guess_kpoint` → `req.kpoints` **3단계**다. `data-models.md`의 **`AtomInfo`** 계약에는 `verified_optimal_kpoint`/`initial_guess_kpoint`만 정의되어 있고 **struct-level `kpoints` 키는 정의되어 있지 않다**. 따라서 f3는 `struct.get("kpoints")`를 우선순위에 **포함하지 않으며, 읽어서도 안 된다**(미정의 계약 참조 금지). 제출(f4-jobs)의 `/submit-job`은 별도 코드 경로로 더 긴 우선순위를 가질 수 있으나, 이는 f3 계약과 무관하며 본 문서의 3단계가 inp 생성의 정본이다.
 
 #### 생성 규칙 (계약 핵심)
 
@@ -113,9 +110,7 @@
     "cell_angles": [90.0, 90.0, 90.0],
     "full_coord_text": "Si 0.0 0.0 0.0\nSi 1.3575 1.3575 1.3575",
     "full_cell_text": "ABC 5.43 5.43 5.43\nALPHA_BETA_GAMMA 90.0 90.0 90.0",
-    "use_scaled": false,
-    "kpoint_recommended": true,
-    "initial_guess_kpoint": "4 4 4"
+    "use_scaled": false
   },
   "steps": [
     {
@@ -131,8 +126,7 @@
   "cutoff": 400.0,
   "rel_cutoff": 50.0,
   "functional": "PBE",
-  "scf_algo": "OT",
-  "kpoints": "4 4 4"
+  "scf_algo": "OT"
 }
 ```
 
@@ -156,8 +150,8 @@
 {
   "atom_info": {"filename": "A.cif", "atom_count": 2, "atoms": [], "elements": ["Si"], "element_counts": {"Si": 2}, "cell": [5.43, 5.43, 5.43], "full_coord_text": "", "full_cell_text": "", "use_scaled": false},
   "multi_atom_info": [
-    {"filename": "A.cif", "atom_count": 2, "atoms": [], "elements": ["Si"], "element_counts": {"Si": 2}, "cell": [5.43, 5.43, 5.43], "full_coord_text": "", "full_cell_text": "", "use_scaled": false, "verified_optimal_kpoint": "4 4 4", "use_smear": false},
-    {"filename": "B structure.cif", "atom_count": 4, "atoms": [], "elements": ["Ge"], "element_counts": {"Ge": 4}, "cell": [5.65, 5.65, 5.65], "full_coord_text": "", "full_cell_text": "", "use_scaled": false, "initial_guess_kpoint": "2 2 2", "use_smear": true, "smear_temp": 500.0}
+    {"filename": "A.cif", "atom_count": 2, "atoms": [], "elements": ["Si"], "element_counts": {"Si": 2}, "cell": [5.43, 5.43, 5.43], "full_coord_text": "", "full_cell_text": "", "use_scaled": false, "use_smear": false},
+    {"filename": "B structure.cif", "atom_count": 4, "atoms": [], "elements": ["Ge"], "element_counts": {"Ge": 4}, "cell": [5.65, 5.65, 5.65], "full_coord_text": "", "full_cell_text": "", "use_scaled": false, "use_smear": true, "smear_temp": 500.0}
   ],
   "steps": [
     {"step_name": "Energy", "run_type": "ENERGY", "inp_options": [], "selected": true},
@@ -173,14 +167,14 @@
 
 #### 응답 예시 — 다중 구조
 
-`exclude:true` 스텝은 제외되고 1개 스텝만 남으므로, 구조 2개 × 스텝 1개 = 파일 2개. 파일명은 구조 파일명 base 기준이고 `step{i}`의 `i`는 필터 후 순번(`1`)이다. 두 번째 구조는 공백이 `_`로 치환되어 base가 `B_structure`. k-point는 3단계 우선순위(`verified_optimal_kpoint` → `initial_guess_kpoint` → `req.kpoints`)로 결정되어, 첫 구조는 `verified_optimal_kpoint=4 4 4`, 두 번째 구조는 `initial_guess_kpoint=2 2 2`가 선택된다.
+`exclude:true` 스텝은 제외되고 1개 스텝만 남으므로, 구조 2개 × 스텝 1개 = 파일 2개. 파일명은 구조 파일명 base 기준이고 `step{i}`의 `i`는 필터 후 순번(`1`)이다. 두 번째 구조는 공백이 `_`로 치환되어 base가 `B_structure`. smear/smear_temp는 구조 키 존재 시 구조값이 우선 반영되어, 첫 구조는 smear off, 두 번째 구조는 `FERMI_DIRAC 500.0K`가 적용된다.
 
 ```json
 {
   "status": "success",
   "generated_files": [
-    {"filename": "A_step1.inp", "content": "...(kpoints=4 4 4, smear off)..."},
-    {"filename": "B_structure_step1.inp", "content": "...(kpoints=2 2 2, smear FERMI_DIRAC 500.0K)..."}
+    {"filename": "A_step1.inp", "content": "...(smear off)..."},
+    {"filename": "B_structure_step1.inp", "content": "...(smear FERMI_DIRAC 500.0K)..."}
   ]
 }
 ```
@@ -208,8 +202,7 @@
 ### 1) `AtomInfo` — from **f1-structure** (`data-models.md`: `AtomInfo`)
 
 - 사용처: `req.atom_info`(단일 분기), `req.multi_atom_info[*]`(다중 분기), `build_full_inp(atom_info=...)`로 전달.
-- **방어적 읽기 필수**: f3가 직접 읽는 선택 키는 다중 분기의 `filename`, `verified_optimal_kpoint`, `initial_guess_kpoint`, `use_smear`, `smear_temp`이며 모두 `.get`/`in` 체크로 처리한다. `build_full_inp` 내부는 `cell_angles`(비직교 셀 판정), `full_coord_text`, `full_cell_text` 등을 사용한다.
-- **struct-level `kpoints` 키 없음**: `AtomInfo` 계약에는 struct별 `kpoints` 키가 정의되어 있지 않다. f3의 다중 분기 k-point는 `verified_optimal_kpoint`/`initial_guess_kpoint`(둘 다 선택 키)와 요청 본문의 `req.kpoints`만으로 결정한다. `struct.get("kpoints")`를 읽지 말 것.
+- **방어적 읽기 필수**: f3가 직접 읽는 선택 키는 다중 분기의 `filename`, `use_smear`, `smear_temp`이며 모두 `.get`/`in` 체크로 처리한다. `build_full_inp` 내부는 `cell_angles`(비직교 셀 판정), `full_coord_text`, `full_cell_text` 등을 사용한다.
 - AtomInfo는 정상/parse-failure 폴백/empty-CIF 폴백 **세 형태의 키 집합이 다르므로** 선택 키는 반드시 `.get`으로 읽을 것.
 
 목업 (정상 경로, 단일):
@@ -228,8 +221,6 @@
   "full_coord_text": "Si 0.0 0.0 0.0\nSi 1.3575 1.3575 1.3575",
   "full_cell_text": "ABC 5.43 5.43 5.43\nALPHA_BETA_GAMMA 90.0 90.0 90.0",
   "use_scaled": false,
-  "kpoint_recommended": true,
-  "initial_guess_kpoint": "4 4 4",
   "smear_recommended": false,
   "periodic": "XYZ"
 }
@@ -239,8 +230,8 @@
 
 ```json
 [
-  {"filename": "A.cif", "atom_count": 2, "atoms": [], "elements": ["Si"], "element_counts": {"Si": 2}, "cell": [5.43, 5.43, 5.43], "cell_angles": [90.0, 90.0, 90.0], "full_coord_text": "Si 0 0 0", "full_cell_text": "ABC 5.43 5.43 5.43", "use_scaled": false, "verified_optimal_kpoint": "4 4 4"},
-  {"filename": "B structure.cif", "atom_count": 4, "atoms": [], "elements": ["Ge"], "element_counts": {"Ge": 4}, "cell": [5.65, 5.65, 5.65], "cell_angles": [85.0, 90.0, 90.0], "full_coord_text": "Ge 0 0 0", "full_cell_text": "ABC 5.65 5.65 5.65", "use_scaled": false, "initial_guess_kpoint": "2 2 2", "use_smear": true, "smear_temp": 500.0}
+  {"filename": "A.cif", "atom_count": 2, "atoms": [], "elements": ["Si"], "element_counts": {"Si": 2}, "cell": [5.43, 5.43, 5.43], "cell_angles": [90.0, 90.0, 90.0], "full_coord_text": "Si 0 0 0", "full_cell_text": "ABC 5.43 5.43 5.43", "use_scaled": false, "use_smear": false},
+  {"filename": "B structure.cif", "atom_count": 4, "atoms": [], "elements": ["Ge"], "element_counts": {"Ge": 4}, "cell": [5.65, 5.65, 5.65], "cell_angles": [85.0, 90.0, 90.0], "full_coord_text": "Ge 0 0 0", "full_cell_text": "ABC 5.65 5.65 5.65", "use_scaled": false, "use_smear": true, "smear_temp": 500.0}
 ]
 ```
 
@@ -258,8 +249,6 @@
   "full_coord_text": "",
   "full_cell_text": "ABC 10.0 10.0 10.0",
   "use_scaled": false,
-  "kpoint_recommended": false,
-  "initial_guess_kpoint": "1 1 1",
   "error": "could not parse CIF"
 }
 ```
@@ -369,7 +358,7 @@ f3-inp는 **상류(f1/f2)와 하류(f4) 모두 미완성이어도 완전 독립 
 - [ ] **스텝 필터**: `selected != False AND exclude != True`만 통과. selected/exclude 미지정 스텝은 포함된다.
 - [ ] **단일 분기**: `multi_atom_info`가 없거나 `len<=1`이면 `req.atom_info` 기준으로 `step{i}.inp`(i=필터 후 1-based)를 생성한다.
 - [ ] **다중 분기**: `multi_atom_info`가 있고 `len>1`이면 구조마다 `{base}_step{i}.inp`를 생성한다. `base`는 `filename`에서 `.cif` 제거 + 공백→`_` 치환.
-- [ ] **다중 분기 우선순위**: kpoints는 `verified_optimal_kpoint → initial_guess_kpoint → req.kpoints` **3단계** 순(struct-level `kpoints` 키는 `AtomInfo` 계약에 없으므로 참조 금지), smear/smear_temp는 구조 키 존재 시 구조값 우선.
+- [ ] **다중 분기 구조별 우선**: smear/smear_temp는 구조 키(`struct["use_smear"]`/`struct["smear_temp"]`)가 존재하면 구조값이 `req` 값보다 우선한다.
 - [ ] `inp_options`가 `list`/`dict` 둘 다 정상 처리되고, `custom_options`가 truthy일 때 `step{i}/` 접두/비접두 경로가 의도대로 병합된다.
 - [ ] 응답이 `GenerateInpResult`(`status:"success"`, `generated_files: GeneratedFile[]`) 스키마를 만족하고, f3가 생산하는 `GeneratedFile`에는 `validation_logs`가 없다.
 - [ ] 선택 스텝 0개일 때 `200` + `generated_files: []`를 반환한다(에러 아님).

@@ -256,13 +256,11 @@
   "full_coord_text": "      Si   0.00000000   0.00000000   0.00000000\n      Si   1.35750000   1.35750000   1.35750000",
   "full_cell_text": "      ABC 5.43 5.43 5.43\n      ALPHA_BETA_GAMMA 90.0 90.0 90.0",
   "use_scaled": false,
-  "kpoint_recommended": true,
-  "initial_guess_kpoint": "2 2 2",
   "smear_recommended": false
 }
 ```
 
-> **방어 체크 필수:** `atom_count == 0` 및 `error` 키 유무로 폴백 형태를 판별. `cell_angles`/`volume`/`element_indices`/`kpoint_recommended` 등은 폴백에서 **부재**할 수 있으니 `.get(key, default)`로 접근. centering 로직은 `a['x'],a['y'],a['z'],a['element']`와 `cell`을 사용한다.
+> **방어 체크 필수:** `atom_count == 0` 및 `error` 키 유무로 폴백 형태를 판별. `cell_angles`/`volume`/`element_indices`/`smear_recommended` 등은 폴백에서 **부재**할 수 있으니 `.get(key, default)`로 접근. centering 로직은 `a['x'],a['y'],a['z'],a['element']`와 `cell`을 사용한다.
 
 ### (2) `PlanResult` ← f2-plan
 

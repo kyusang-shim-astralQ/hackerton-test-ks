@@ -1,6 +1,6 @@
 # 07 · f6-benchmark — 12-레벨 정확도 벤치마크  ※ 클러스터 의존 → MOCK MODE 필수
 
-> 사용법: `01-foundation.md` 완료 후, 새/같은 세션에 아래 프롬프트를 붙여넣으세요. (벤치마크는 메인 6단계와 별개 트랙)
+> 사용법: `fe/01-foundation.md` 완료 후, 새/같은 세션에 아래 프롬프트를 붙여넣으세요. (벤치마크는 메인 6단계와 별개 트랙)
 
 ---
 
@@ -11,7 +11,7 @@
 ### 먼저 읽어라 (단일 소스)
 - `docs/features/f6-benchmark/api.md` — `POST /api/benchmark/run`(body `{levels, ...params}` → `{status, message}`), `GET /api/benchmark/status?lang`(→ `{status, current_level, reports[]}`).
 - `docs/contracts/data-models.md` — `BenchmarkRequest`, `BenchmarkReport`, `BenchmarkLevelReport`(레벨→물성 매핑: 1 geo_opt … 12 hirshfeld).
-- `docs/design-system.md`(Lab Paper) + `docs/mockups/a-paper-hifi.html` 톤.
+- `docs/design-system.md`(Lab Paper) 톤.
 
 ### 만들 것
 1. **진입/실행**: 벤치마크 화면(예: 1단계 내 진입 버튼 또는 별도 라우트 `app/(wizard)/benchmark` — design-system 톤 유지). [통합 벤치마크 가동] → `POST /api/benchmark/run`.

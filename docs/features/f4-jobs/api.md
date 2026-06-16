@@ -6,6 +6,8 @@
 
 > **한 줄 책임**: 생성된 `.inp`(또는 자동 생성된 `.inp`)와 `atom_info`/`steps`/DFT 파라미터를 받아 SGE(`qsub`)에 작업 스위트를 제출하고, `qstat` 폴링으로 실시간 상태를 모니터링하며, 실패 시 `self_healing`으로 자동 재시도하고, 단계 간 좌표를 체이닝한다. 다중구조 제출 시 `multi_metadata.json`을 기록하며, 단일/다중 라이브 상태와 작업 중단/다운로드를 제공한다.
 
+> **MVP 실제 실행(SSH/SGE)**: 백엔드는 로컬에서 돌고 **`paramiko`로 클러스터(`.env`의 `CLUSTER_*`)에 SSH/SFTP 접속**해 `.inp`+`run.sh` 업로드 → `qsub` → `qstat` 폴링 → 결과 회수한다(`app/core/sge.py`). 아래 "외부 의존성"의 직접 `subprocess(qsub)` 서술은 **레거시(클러스터 내부 실행) 기준**이며, **엔드포인트·데이터 계약은 동일**하다. `USE_SGE=0`/연결 실패 시 목 스트림 폴백. (`self_healing` 자가치유·`schema_engine`은 MVP 범위 밖.)
+
 | 항목 | 내용 |
 |---|---|
 | **담당 모듈** | `app/features/jobs/service.py` (모듈-레벨 싱글톤 `orchestrator = CP2KOrchestrator()`) |
@@ -64,8 +66,7 @@
 | `multiplicity` | `int` | N | `1` | 다중도 |
 | `use_smear` | `bool` | N | `false` | SMEAR 사용 여부. 다중 분기는 구조별 `struct.get('use_smear')` 우선 |
 | `smear_temp` | `float` | N | `300.0` | SMEAR 전자온도 (K) |
-| `kpoints` | `str \| null` | N | `null` | k-grid 문자열 예 `'2 2 1'`. `property`가 `absorption`/`emission`이면 **강제 `None`(Gamma)** |
-| `property` | `str` | N | `'energy'` | 물성 종류 |
+| `property` | `str` | N | `'energy'` | 물성 종류. **12종 중 단 하나만 선택하는 단일 문자열**(리스트/다중 선택 아님) |
 | `custom_options` | `Dict[str,Any]` | N | `{}` | `expert_tip` 키만 오케스트레이터로 전달됨 |
 | `eps_scf` | `str` | N | `'1.0E-6'` | SCF 수렴 임계 |
 | `periodic` | `str` | N | `'XYZ'` | 주기성 |
@@ -113,8 +114,7 @@
   "property": "geo_opt",
   "cutoff": 400.0,
   "rel_cutoff": 50.0,
-  "functional": "PBE",
-  "kpoints": "2 2 1"
+  "functional": "PBE"
 }
 ```
 
@@ -341,9 +341,6 @@
   "full_coord_text": "Ti 0.0 0.0 0.0\nTi 2.30 2.30 1.48\nO 1.31 1.31 0.0",
   "full_cell_text": "ABC 4.59 4.59 2.96\nALPHA_BETA_GAMMA 90.0 90.0 90.0",
   "use_scaled": false,
-  "kpoint_recommended": true,
-  "initial_guess_kpoint": "2 2 3",
-  "verified_optimal_kpoint": "3 3 4",
   "periodic": "XYZ"
 }
 ```
@@ -363,8 +360,6 @@
   "error": "Empty CIF (No atoms)"
 }
 ```
-
-> 다중 분기에서 k-point 선택 우선순위(`app/features/jobs/router.py` 기준): `struct.get('verified_optimal_kpoint')` → `struct.get('initial_guess_kpoint')` → `current_kpoints`(요청 `kpoints`, 광학물성이면 `None`). 이는 `f3-inp`의 `verified_optimal_kpoint → initial_guess_kpoint → req.kpoints` 다중 분기 우선순위와 동일한 3단계 규칙이다. `AtomInfo` 계약에는 struct-level `kpoints` 키가 정의되어 있지 않으므로(`verified_optimal_kpoint`/`initial_guess_kpoint`만 존재), 선두에 별도의 `struct.get('kpoints')` 단계는 두지 않는다.
 
 ### `PlanStep` (from `f2-plan`)
 
@@ -424,7 +419,7 @@
 | `app/shared/self_healing.py` | 〃 | `get_retry_filenames(step_dir, base_inp, retry_count) -> (step_dir, inp_filename, sh_filename)` | 재시도 파일명(`{name}_retry_{n}.inp/.sh`) |
 | `app/shared/self_healing.py` | 〃 | `record_success()` | 성공 시 치유 지식 베이스 영구 저장 |
 | `app/shared/options.py` | `from app.shared.options import parse_path_based_options` | `parse_path_based_options(path_list: List[str]) -> Dict` | 경로형 옵션 → 계층 dict |
-| `app/features/inp/service.py` | `from app.features.inp.service import build_full_inp` | `build_full_inp(tree, atom_info, step_idx=1, all_steps=..., run_type=..., cutoff, rel_cutoff, functional, basis_set, method, scf_algo, charge, multiplicity, use_smear, smear_temp, kpoints, active_tokens) -> str` | `.inp` 파일 내용 렌더링 |
+| `app/features/inp/service.py` | `from app.features.inp.service import build_full_inp` | `build_full_inp(tree, atom_info, step_idx=1, all_steps=..., run_type=..., cutoff, rel_cutoff, functional, basis_set, method, scf_algo, charge, multiplicity, use_smear, smear_temp, active_tokens) -> str` | `.inp` 파일 내용 렌더링 |
 | `app/shared/physics_patterns.py` | `from app.shared.physics_patterns import PHYSICS_PATTERNS` (지연 import) | 정규식 dict. `_parse_live_data`가 키 `'scf_step'`, `'total_energy'`, `'geo_max_grad'` 사용 | 라이브 로그 파싱 |
 | `app/features/jobs/schemas.py` | `from app.features.jobs.schemas import SubmitRequest, FileItem` | Pydantic 모델 | `/submit-job` 요청 검증. `FileItem` = `GeneratedFile` 호환 |
 | `app/shared/schema_engine.py` (간접) | `self_healing.validate_and_correct` 내부에서 `app/shared/schema_engine.py` 사용 | — | inp 정규화의 단일 거버넌스 엔진. `f4`는 직접 import하지 않음 |
@@ -439,7 +434,7 @@ start_job_suite(self, job_dir: str, steps: List[Dict[str,Any]], atom_info: Dict[
                 lang: str='ko', cutoff: float=400.0, rel_cutoff: float=50.0,
                 functional: str='PBE', basis_set: str='DZVP-MOLOPT-GTH',
                 method: str='GPW', scf_algo: str='OT', charge: int=0, multiplicity: int=1,
-                use_smear: bool=False, smear_temp: float=300.0, kpoints: str=None,
+                use_smear: bool=False, smear_temp: float=300.0,
                 provided_files: Dict[str,str]=None, expert_tip: str=None) -> None
 ```
 
@@ -499,14 +494,13 @@ start_job_suite(self, job_dir: str, steps: List[Dict[str,Any]], atom_info: Dict[
 - 단일구조 제출 → `job_status.json`에 `status='Running'` 엔트리 생성 확인.
 - 다중구조 제출 → `multi_metadata.json` 기록 + `SubmitJobResponse.sub_jobs` 키 형식(`{custom_name}_{safe_name}`) 확인.
 - `/job-live-status` 단일/다중 응답 형태 분기 확인(`multi_metadata.json` 유무).
-- 광학 물성(`absorption`/`emission`) 제출 시 `kpoints` 강제 `None` 확인.
 - `/job-stop` → `qdel` 스텁 호출 + `status='aborted'` 영속화 확인.
 - `/download-job` → 존재하는 디렉토리 `tar.gz` 200, 부재 시 404.
 - 실패 로그 주입 → `diagnose`/`heal` 스텁 처방 적용 → `retry_count` 증가 → 재시도 파일명(`*_retry_{n}.*`) 생성 확인.
 
 ### 완료 정의 (Definition of Done)
 
-- [ ] `POST /submit-job` 단일/다중 분기 모두 명세대로 응답(`SubmitJobResponse`). 광학 물성 Gamma 강제 동작.
+- [ ] `POST /submit-job` 단일/다중 분기 모두 명세대로 응답(`SubmitJobResponse`).
 - [ ] `BackgroundTask`로 `start_job_suite` 호출되고 `job_status.json`에 `JobStatus` 엔트리가 영속화됨(원자적 쓰기).
 - [ ] `GET /job-live-status/{job_key:path}` 단일=`JobStatus`(문자열화 + `job_key` 주입), 다중=집계, DB 없을 때 디스크 동적복원 모두 동작. 미발견 시 `{"status":"Unknown"}`.
 - [ ] `POST /job-stop` 가 `qdel`을 호출하고 `status='aborted'` 영속화. `job_key` 누락 시 error 메시지.

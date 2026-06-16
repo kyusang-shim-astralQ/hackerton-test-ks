@@ -36,7 +36,7 @@
 | 필드 | 타입 | 필수 | 기본값 | 설명 |
 |---|---|:---:|---|---|
 | `atom_info` | `AtomInfo` (object) | ✅ | — | f1-structure가 생성하는 구조 정보 dict. SSOT. (consumes 섹션 참조) |
-| `property` | `str` | ✅ | — | 계산 물성. `PROPERTY_SECTION_MAP`의 키. 표준 12종 물성 키: `geo_opt`, `single_point`, `dos`, `band`, `aimd`, `vibrational`, `neb`, `adsorption`, `work_function`, `hirshfeld`, `absorption`, `emission` |
+| `property` | `str` | ✅ | — | 계산 물성. **표준 12종 중 단 하나만 선택하는 단일 문자열**(리스트/다중 선택 아님). `PROPERTY_SECTION_MAP`의 키. 표준 12종 물성 키: `geo_opt`, `single_point`, `dos`, `band`, `aimd`, `vibrational`, `neb`, `adsorption`, `work_function`, `hirshfeld`, `absorption`, `emission` |
 | `basis_set` | `str` | ✅ | — | 기저함수 세트. 예 `DZVP-MOLOPT-GTH` |
 | `cutoff` | `float` | ✅ | — | 평면파 cutoff (Ry) |
 | `rel_cutoff` | `float` | ✅ | — | relative cutoff |
@@ -49,7 +49,6 @@
 | `smear_temp` | `float` | ❌ | `300.0` | Fermi-Dirac 전자 온도 |
 | `custom_options` | `Dict[str, Any]` | ❌ | `{}` | UI 세부 옵션. `OPTION_TOKEN_MAP`으로 토큰 보강 + 프롬프트 요약 생성 |
 | `lang` | `str` | ❌ | `"ko"` | `"en"`이면 `UNIFIED_PROMPT`와 user 메시지를 영어로 치환. **이 모델에만 존재하는 필드** |
-| `kpoints` | `str \| null` | ❌ | `null` | `null`이면 프롬프트에 `Gamma-point (None)`로 표기 |
 | `eps_scf` | `str` | ❌ | `"1.0E-6"` | SCF 수렴 기준 |
 | `periodic` | `str` | ❌ | `"XYZ"` | 주기성 |
 | `max_scf` | `int \| null` | ❌ | `null` | 최대 SCF 반복 |
@@ -111,8 +110,6 @@
     "full_coord_text": "Ti 0.0 0.0 0.0\nO 1.9 0.0 0.0",
     "full_cell_text": "ABC 3.78 3.78 9.51\nALPHA_BETA_GAMMA 90 90 90",
     "use_scaled": false,
-    "kpoint_recommended": true,
-    "initial_guess_kpoint": "2 2 1",
     "smear_recommended": true,
     "smear_reason_en": "Metallic-like d-states near Fermi level"
   },
@@ -123,7 +120,6 @@
   "functional": "PBE",
   "scf_algo": "OT",
   "use_smear": false,
-  "kpoints": "2 2 1",
   "lang": "ko"
 }
 ```
@@ -132,7 +128,7 @@
 
 ```json
 {
-  "expert_tip": "TiO2 anatase는 d-전자가 페르미 준위 근처에 있어 SCF 수렴이 까다롭습니다. OT 대신 DIAGONALIZATION + Broyden MIXING을 권장하며, K-point 2 2 1로 주기성을 반영합니다.",
+  "expert_tip": "TiO2 anatase는 d-전자가 페르미 준위 근처에 있어 SCF 수렴이 까다롭습니다. OT 대신 DIAGONALIZATION + Broyden MIXING을 권장합니다.",
   "steps": [
     {
       "step_idx": 1,
@@ -228,8 +224,6 @@
 | `cell` | `struct_summary` Cell Size | `None` 표기 |
 | `cell_angles` | `cell_angles_str` | `"90.00, 90.00, 90.00"` |
 | `periodic` | `struct_summary` | `"XYZ"` |
-| `kpoint_recommended` | K-Point Recommendation `YES/NO` | `NO` |
-| `initial_guess_kpoint` | Suggested Grid | `"1 1 1"` |
 | `smear_recommended` | Smearing Recommendation | `NO` |
 | `smear_reason_en` | Smearing 사유 | `"N/A"` |
 
@@ -254,8 +248,6 @@
   "full_coord_text": "C 0.000 1.396 0.0\nH 0.000 2.480 0.0",
   "full_cell_text": "ABC 15.0 15.0 15.0\nALPHA_BETA_GAMMA 90 90 90",
   "use_scaled": false,
-  "kpoint_recommended": false,
-  "initial_guess_kpoint": "1 1 1",
   "smear_recommended": false,
   "smear_reason_ko": "밴드갭이 충분히 커 SMEAR 불필요",
   "smear_reason_en": "Band gap is wide enough; SMEAR not required",
@@ -278,8 +270,6 @@
   "full_coord_text": "",
   "full_cell_text": "",
   "use_scaled": false,
-  "kpoint_recommended": false,
-  "initial_guess_kpoint": "1 1 1",
   "error": "could not parse CIF: unexpected token"
 }
 ```
@@ -301,7 +291,7 @@
 }
 ```
 
-> 이 폴백에는 `cell_angles`, `volume`, `element_indices`, `kpoint_*`, `smear_*`가 **부재**한다. f2-plan은 모두 `.get()` 폴백으로 처리하므로 빈 플랜이라도 안전하게 생성된다.
+> 이 폴백에는 `cell_angles`, `volume`, `element_indices`, `smear_*`가 **부재**한다. f2-plan은 모두 `.get()` 폴백으로 처리하므로 빈 플랜이라도 안전하게 생성된다.
 
 ---
 

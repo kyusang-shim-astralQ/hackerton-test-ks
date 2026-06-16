@@ -1,6 +1,6 @@
-# be-03 · f2-plan 백엔드 (✅ REAL · LLM) — 데모 하이라이트
+# be/03 · f2-plan 백엔드 (✅ REAL · LLM) — 데모 하이라이트
 
-> `be-01-foundation.md` 완료 후 실행.
+> `be/01-foundation.md` 완료 후 실행.
 
 ---
 

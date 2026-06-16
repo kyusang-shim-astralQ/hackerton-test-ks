@@ -1,6 +1,6 @@
-# be-07 · f6-benchmark 백엔드 (🔴 MOCK)
+# be/07 · f6-benchmark 백엔드 (🔴 MOCK)
 
-> `be-01-foundation.md` 완료 후 실행. (시간 남을 때 — 우선순위 낮음)
+> `be/01-foundation.md` 완료 후 실행. (시간 남을 때 — 우선순위 낮음)
 
 ---
 

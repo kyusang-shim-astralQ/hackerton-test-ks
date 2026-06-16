@@ -12,14 +12,14 @@
 
 | id | name_ko | 책임 (Responsibility) | 담당 엔드포인트 | 소유 모듈 |
 |----|---------|----------------------|----------------|----------|
-| **f1-structure** | 구조 분석 및 K-point 캐시 | CIF(bytes)를 ASE로 파싱해 원자/격자/원소 + K-point·SMEAR 권장값을 담은 정규화 `atom_info`(SSOT)를 생성하고, CIF 본문 SHA-256 해시 기반 K-point 영속 캐시를 관리한다. 캐시 갱신은 프런트 트리거(`/update-kpoint-cache`)에 의해서만 일어나며 작업완료 자동학습은 없다. | `POST /analyze-cif`<br>`POST /update-kpoint-cache` | `app/features/structure/` |
+| **f1-structure** | 구조 분석 | CIF(bytes)를 ASE로 파싱해 원자/격자/원소 + SMEAR 권장값을 담은 정규화 `atom_info`(SSOT)를 생성한다. CIF 본문 SHA-256 해시(`content_hash`)로 동일 입력을 식별한다. | `POST /analyze-cif` | `app/features/structure/` |
 | **f2-plan** | AI 시뮬레이션 플랜 생성 | `atom_info` + DFT 파라미터를 받아 2단계 Claude 호출(키워드 추출 → 정밀 설계)로 멀티스텝 플랜(`steps` + `expert_tip`)을 생성한다. 항상 `req.atom_info`를 결과에 에코해 SSOT를 동기화한다. `active_tokens`는 `req`(PlanRequest) 동적 속성에서 읽는다. | `POST /generate-plan` | `app/features/plan/` |
 | **f3-inp** | CP2K 입력파일(INP) 생성 | 플랜 `steps`(selected/exclude 필터)와 `atom_info`로 스텝별 `build_full_inp`를 호출해 `.inp` 텍스트를 생성한다. `multi_atom_info`가 2개 이상이면 구조별 개별 파일을 만든다. 옵션 트리는 schema_engine 거버넌스와 self_healing 검증을 거친다. | `POST /generate-inp` | `app/features/inp/` |
 | **f4-jobs** | 작업 제출 및 모니터링 | 생성된 `.inp`(또는 자동 생성)와 파라미터로 SGE(qsub)에 스위트를 제출하고, qstat 폴링으로 실시간 상태를 모니터링하며, 실패 시 self_healing으로 자동 재시도하고 단계 간 좌표를 체이닝한다. 다중구조 시 `multi_metadata.json`을 기록하고 상태를 `job_status.json`에 영속화한다. | `POST /submit-job`<br>`GET /job-live-status/{job_key:path}`<br>`POST /job-stop`<br>`GET /download-job/{job_name}` | `app/features/jobs/` |
 | **f5-report** | 결과 리포트 생성 | 완료된 `job_dir`를 walk하며 `.out/.pdos/.bs` 로그에서 12종 물성과 총에너지를 정규식+AI 폴백으로 추출하고, `multi_metadata.json` 유무에 따라 단일/다중 비교 마크다운 리포트를 LLM(또는 폴백 템플릿)으로 생성한다. 지원 물성 12종은 `{geo_opt, single_point, dos, band, aimd, vibrational, neb, adsorption, work_function, hirshfeld, absorption, emission}`로, f6 벤치마크 레벨 12(`hirshfeld`) 산출물도 분석 가능하다. **JobStatus나 orchestrator는 소비하지 않는다.** | `POST /generate-report` | `app/features/report/` |
 | **f6-benchmark** | 정확도 벤치마크 엔진 | `test/level1~12`의 공식 CIF/INP를 진실값으로 삼아 CIF 분석 → AI 플랜 → INP 빌드 → SGE/로컬 실행 → 자가치유 재시도(최대 3회) → 공식 결과 대비 오차 비교를 12단계로 수행하고, 실시간 진행상태와 레벨별 정확도 리포트를 제공한다. | `POST /api/benchmark/run`<br>`GET /api/benchmark/status` | `app/features/benchmark/` |
 
-> 엔드포인트는 총 11개이며 각각 정확히 1개 기능에 배정된다. `/update-kpoint-cache`는 캐시를 소유한 f1에 배정한다.
+> 엔드포인트는 총 10개이며 각각 정확히 1개 기능에 배정된다.
 
 ---
 
@@ -32,7 +32,7 @@
 
 ```mermaid
 flowchart TD
-    f1["f1-structure<br/>구조 분석 · K-point 캐시"]
+    f1["f1-structure<br/>구조 분석"]
     f2["f2-plan<br/>AI 플랜 생성"]
     f3["f3-inp<br/>INP 생성"]
     f4["f4-jobs<br/>제출 · 모니터링"]
@@ -88,7 +88,7 @@ flowchart TD
 | `app/shared/self_healing.py` | 실패 진단(`diagnose`) → 지식베이스/Claude 자동수정(`heal`/`heal_with_ai`) → 검증(`validate_and_correct`) → 성공 학습(`record_success`). `healing_knowledge.json` 영속. | f3, f4, f6 | **f4-jobs 소유.** `validate_and_correct` / `diagnose` / `heal` 시그니처 동결. |
 | `app/shared/physics_rules.py` | CP2K 옵션 dict in-place 물리 모순 자동교정(`apply_physics_rules`) + SCF 실패 단계별 처방(`apply_scf_repair`). 순수 규칙 엔진. | f3, f4, f6 (self_healing/schema_engine 경유 간접) | schema_engine 오너 또는 f4-jobs 오너 공동 관리. |
 | `app/core/sge.py` (`SGE_TEMPLATE`) | SGE qsub용 `run.sh` 셸 템플릿(큐 gp3, PE 16cpu, CP2K_ROOT, Intel oneAPI mpiexec, venv 경로). | f4, f6 | **f4-jobs 소유.** 클러스터 환경 변경 시 단일 지점 수정. |
-| `app/features/structure/service.py` | CIF SHA-256 해시 → K-point 영속 캐시(`KPointCache` + 싱글톤, `kpoint_cache.json`). `get_content_hash`/`check`는 `/analyze-cif`가 사용. | f1 | **f1-structure 전용.** ⚠️ `save(content,kpoint)`는 호출처 0인 데드코드. 실제 쓰기는 `app/features/structure/router.py`가 `kp_cache._cache`에 직접 대입 + `_save_cache()`(캡슐화 위반). clean 재설계 시 `save_by_hash(content_hash, kpoint)` public 메서드 권장. |
+| `app/features/structure/service.py` | CIF 파싱(ASE) → `atom_info` 생성 + `content_hash`(SHA-256) 계산. `/analyze-cif`가 사용. | f1 | **f1-structure 전용.** |
 | `app/main.py` (FastAPI app) | app 인스턴스, CORS, `RequestValidationError` 핸들러, 로그필터 미들웨어, `../frontend` SPA 정적 마운트. | 전 기능 | **app 부트스트랩/미들웨어/정적서빙은 아키텍트 소유.** 각 엔드포인트는 기능 오너가 라우터로 등록. APIRouter 분리 권장(병렬 충돌 최소화). |
 
 ### 모듈 순환 의존 동결 규약 (부팅 안정성)
@@ -123,7 +123,7 @@ backend/
       options.py             # parse_path_based_options, merge_custom_options, deep_merge
       physics_patterns.py    # PHYSICS_PATTERNS
     features/
-      structure/   router.py  service.py  schemas.py            # f1 (analyzer + kp cache)
+      structure/   router.py  service.py  schemas.py            # f1 (CIF 분석)
       plan/        router.py  service.py  schemas.py  prompts.py # f2
       inp/         router.py  service.py  schemas.py            # f3 (build_full_inp 소유)
       jobs/        router.py  service.py  schemas.py            # f4 (구 orchestrator)
@@ -173,9 +173,7 @@ flowchart LR
 ### 5.4 계약 드리프트 방지 (clean 재설계 메모, 권장·비강제)
 
 - 4개 요청 모델의 공유 DFT 파라미터(~20개)를 공통 베이스 `DftParams`로 추출하면 드리프트를 막는다. (현재 `SubmitRequest`만 기본값이 다름: cutoff=400.0 / rel_cutoff=50.0 / functional=PBE.)
-- `cache_manager`에 `save_by_hash(content_hash, kpoint)` public 메서드를 추가해 `main.py`의 `_cache` 직접 접근 캡슐화 위반을 제거하고 데드코드 `save(content,kpoint)`를 정리한다.
 - `job_key` 규칙(`'simulations/'` 경로 `/`→`_` 치환)은 f4 내부 세부지만 f5가 디렉토리 해석에 의존하므로, `MultiMetadata.sub_jobs[].job_key`/`filename`을 신뢰 경로로 계약화한다(**f5는 job_key를 역추론하지 말 것**).
-- f3(inp 생성)과 f4(제출)는 별도 코드 경로지만 다중 분기 k-point 우선순위는 동일 계약 키만 참조해야 한다. 두 경로 모두 `verified_optimal_kpoint → initial_guess_kpoint → req.kpoints` 3단계로 통일하며, `AtomInfo` 계약에 정의되지 않은 struct-level `kpoints` 키는 참조하지 않는다(`AtomInfo`에는 `verified_optimal_kpoint`/`initial_guess_kpoint`만 정의됨).
 
 ---
 
@@ -186,7 +184,7 @@ flowchart LR
 | **Anthropic Claude API** | f2(직접), f5(직접), f4·f6(간접, `self_healing.heal_with_ai` / `generate_plan_logic`) | LLM 추론 엔진. f2는 2단계 호출(키워드 추출 → 정밀 설계), f5는 리포트 작성, f4/f6는 자가치유 시 입력 자동수정. 환경변수 `CLAUDE_API_KEY`, `ANTHROPIC_MODEL`(기본 `claude-sonnet-4-6`). |
 | **Faraday SGE / Grid Engine** | f4(직접 제출/모니터링), f6(직접, 로컬 폴백 있음) | 작업 스케줄러. `qsub`/`qstat`/`qdel`, `SGE_ROOT=/var/lib/gridengine`, `SGE_CELL=Faraday`, 큐 `gp3`, PE `16cpu`. 셸 템플릿은 `orchestrator.SGE_TEMPLATE`(f4 소유, f6 재사용). |
 | **CP2K 실행환경** | f4, f6 | DFT 계산 엔진. `CP2K_ROOT=/share/cp2k-2026.1_mkl`, Intel oneAPI `mpiexec`, venv `/DATA/lab07/hglee/cp2k_agent/venv`. f6는 로컬 `cp2k.popt` 폴백 지원. |
-| **파일시스템** | f1, f4, f5, f6 | f1: `backend/kpoint_cache.json`. f4: `simulations/{job}/`, `backend/job_status.json`. f5: `simulations/{job_dir}/`의 `.out/.pdos/.bs/multi_metadata.json`. f6: `test/level{N}/`, `simulations/benchmark_{timestamp}/`. |
+| **파일시스템** | f4, f5, f6 | f4: `simulations/{job}/`, `backend/job_status.json`. f5: `simulations/{job_dir}/`의 `.out/.pdos/.bs/multi_metadata.json`. f6: `test/level{N}/`, `simulations/benchmark_{timestamp}/`. |
 | **ASE** | f1 | CIF 파싱(`ase.io.read(format='cif')`)으로 `atom_info` 생성. |
 
 ### 외부 시스템 관련 운영 메모
@@ -203,7 +201,7 @@ flowchart LR
 
 | 계약 | 생산자 | 소비자 | 비고 |
 |------|--------|--------|------|
-| `AtomInfo` | f1 | f2, f3, f4, f6 | **SSOT.** 정상/parse-failure 폴백/empty-CIF 폴백의 키 집합이 서로 다름 → 선택적 키는 반드시 `.get`. 다중분기 k-point는 `verified_optimal_kpoint`/`initial_guess_kpoint`만 정의(struct-level `kpoints` 키 없음). |
+| `AtomInfo` | f1 | f2, f3, f4, f6 | **SSOT.** 정상/parse-failure 폴백/empty-CIF 폴백의 키 집합이 서로 다름 → 선택적 키는 반드시 `.get`. |
 | `PlanStep` | f2 | f3, f4, f6 | `active_tokens`는 **두 소비처가 다름**: 플랜 생성=`req` 동적 속성, inp/제출=`step` 키(`app/features/jobs/service.py`). |
 | `GeneratedFile` | f3 | f4, f6 | `{filename, content}` 핵심. `validation_logs`는 제출 측 `FileItem`에만. |
 | `MultiMetadata` | f4 | f4, f5 | 다중구조 비교 리포트 트리거. f5가 디스크에서 직접 읽음. |

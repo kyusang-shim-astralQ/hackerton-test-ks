@@ -10,7 +10,7 @@ backend/
     main.py                  # FastAPI 앱: 라우터 등록, 미들웨어, 정적 서빙 (얇게)
     core/
       config.py              # env/설정
-      sge.py                 # SGE_TEMPLATE + qsub 래퍼 (구 orchestrator의 SGE 부분)
+      sge.py                 # SSH/SGE 클라이언트(paramiko): CLUSTER_* 접속·SFTP·run.sh 생성·qsub/qstat/qdel
       llm.py                 # Anthropic 클라이언트 래퍼
     schemas/
       common.py              # cross-feature 계약 = data-models.md 의 코드본
@@ -40,7 +40,7 @@ backend/
 | `schemas.py` | 그 기능 **전용** Pydantic 모델(요청/응답 등). 다른 기능과 공유하지 않는다. |
 | `app/schemas/common.py` | **cross-feature 계약**. 여러 기능이 공유하는 데이터 모델. `data-models.md`의 코드본(=구현체)이다. |
 | `app/shared/*` | 여러 기능이 함께 쓰는 도메인 엔진/유틸(schema_engine, self_healing, physics_rules, options, physics_patterns). |
-| `app/core/*` | 인프라/설정 레이어. 설정(config), SGE 래퍼(sge), LLM 클라이언트(llm). |
+| `app/core/*` | 인프라/설정 레이어. 설정(config), SSH/SGE 클라이언트(sge — paramiko, 클러스터 제출), LLM 클라이언트(llm). |
 
 ## 3. 레거시 → 새 구조 매핑
 
