@@ -6,7 +6,7 @@
 
 > **한 줄 책임**: 생성된 `.inp`(또는 자동 생성된 `.inp`)와 `atom_info`/`steps`/DFT 파라미터를 받아 SGE(`qsub`)에 작업 스위트를 제출하고, `qstat` 폴링으로 실시간 상태를 모니터링하며, 실패 시 `self_healing`으로 자동 재시도하고, 단계 간 좌표를 체이닝한다. 다중구조 제출 시 `multi_metadata.json`을 기록하며, 단일/다중 라이브 상태와 작업 중단/다운로드를 제공한다.
 
-> **MVP 실제 실행(SSH/SGE)**: 백엔드는 로컬에서 돌고 **`paramiko`로 클러스터(`.env`의 `CLUSTER_*`)에 SSH/SFTP 접속**해 `.inp`+`run.sh` 업로드 → `qsub` → `qstat` 폴링 → 결과 회수한다(`app/core/sge.py`). 아래 "외부 의존성"의 직접 `subprocess(qsub)` 서술은 **레거시(클러스터 내부 실행) 기준**이며, **엔드포인트·데이터 계약은 동일**하다. `USE_SGE=0`/연결 실패 시 목 스트림 폴백. (`self_healing` 자가치유·`schema_engine`은 MVP 범위 밖.)
+> **MVP 실제 실행(SSH/SGE)**: 백엔드는 로컬에서 돌고 **`paramiko`로 클러스터(`.env`의 `CLUSTER_*`)에 SSH/SFTP 접속**해 `.inp`+`run.sh` 업로드 → `qsub` → `qstat` 폴링 → 결과 회수한다(`app/core/sge.py`). 아래 "외부 의존성"의 직접 `subprocess(qsub)` 서술은 **레거시(클러스터 내부 실행) 기준**이며, **엔드포인트·데이터 계약은 동일**하다. `USE_SGE=0`/연결 실패 시 목 스트림 폴백. 실패 시 **경량 AI 자가치유**(진단→`.inp` 수정→재시도 MAX3, `docs/prompts/healing-prompt.md`)는 **범위 안**; 34MB `schema_engine`·지식베이스 학습만 범위 밖.
 
 | 항목 | 내용 |
 |---|---|
@@ -454,6 +454,7 @@ start_job_suite(self, job_dir: str, steps: List[Dict[str,Any]], atom_info: Dict[
 | | venv | `/DATA/lab07/hglee/cp2k_agent/venv/bin/activate` |
 | | Intel oneAPI | `/share/intel/oneAPI/setvars.sh`, MPI `/share/intel/oneAPI/mpi/2021.17/bin/mpiexec -n 8 cp2k.psmp` |
 | | MPI/MKL 환경 | `FI_PROVIDER=tcp`, `MKL_DEBUG_CPU_TYPE=5`, `OMP_NUM_THREADS=1` |
+| | SGE 배치/셸 하드닝 | `#$ -S /bin/bash`, `#$ -V`, `#$ -cwd`, `ulimit -s unlimited`, `LD_LIBRARY_PATH`에 CP2K toolchain libs. **`-pe`는 `CLUSTER_PE` 통째(`16cpu 16`), 랭크는 `mpiexec -n {CLUSTER_MPI_RANKS}`(8)** — 랭크를 `-pe`에 붙이지 말 것. 정본 템플릿: `docs/build-prompts/be/05-f4-jobs.md`. |
 | **Anthropic API (간접)** | Claude (로그상 `Claude-Sonnet-4-6`) | `app/shared/self_healing.py`의 `heal_with_ai`가 `app/core/llm.py` 클라이언트를 통해 내부에서 호출. API 키는 `.env`(`load_dotenv()`)에서 로드. **`f4`는 키를 직접 다루지 않음** |
 | **파일시스템** | 상태 DB | `STATUS_DB_PATH = <app/features/jobs/service.py 디렉토리>/job_status.json` (원자적 쓰기 `.tmp` → `os.replace`) |
 | | 작업 트리 | `simulations/{job_dir}/step{idx}_{run_type}/` 하위에 `step{idx}.inp`, `step{idx}.sh`, 재시도 `*_retry_{n}.*` |

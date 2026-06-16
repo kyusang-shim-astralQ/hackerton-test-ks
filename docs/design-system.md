@@ -50,7 +50,7 @@ app/
     step-1/page.tsx          # 구조 파일 선택 + 3D 뷰어
     step-2/page.tsx          # 계산 물성 선택
     step-3/page.tsx          # 상세 옵션 + AI 플랜
-    step-4/page.tsx          # AI 제안 플랜 확인 + 자원 추정
+    step-4/page.tsx          # AI 제안 플랜 확인
     step-5/page.tsx          # 제출 + 실시간 모니터링(터미널 + 수렴 차트)
     step-6/page.tsx          # 최종 리포트
 components/
@@ -485,9 +485,9 @@ interface MoleculeViewerProps {
 | **1 구조** | 단계 1/6 · 구조 입력 및 검증 | 좌: 구조 입력 Dropzone(CIF/XYZ/POSCAR) + FileChip + 구조 메타데이터 MetaList(화학식·상·공간군·격자상수·원자수·밀도). 우: **3D 구조 뷰어(3Dmol, 자동 회전)** + 범례 | 구조 블록(화학식/상/공간군/원자수) |
 | **2 물성** | 단계 2/6 · 계산할 물성 선택 | **12개 물성 중 단일 선택(라디오)** 3열(구조 최적화·밴드 구조·DOS·TDDFT·탄성·포논 등 12종 중 하나만 선택) + 선택 요약(예상 워크플로우) | 물성 블록(선택한 단일 항목 배지) |
 | **3 옵션** | 단계 3/6 · DFT 계산 옵션 | 좌: 전자 구조 설정(범함수·기저·유사퍼텐셜·컷오프·스핀 Segmented). 우: SCF 수렴 설정(EPS_SCF·최대반복·혼합α·스미어링·최적화기 Segmented). 하단 전체폭: **AI 계산 플랜 카드**(생성 버튼 → plan-out 로그 펼침) | 핵심 옵션 블록(범함수·기저·컷오프·EPS_SCF) |
-| **4 플랜** | 단계 4/6 · 계산 플랜 확정 | 확정 플랜 MetaList(① GeomOpt ② SCF ③ Band ④ DOS, "4 stages" 배지) + 자원 추정 3열(예상 시간·코어·메모리/코어) | (옵션까지 채워진 상태 유지) |
+| **4 플랜** | 단계 4/6 · 계산 플랜 확정 | 확정 플랜 MetaList(① GeomOpt ② SCF ③ Band ④ DOS, "4 stages" 배지) | (옵션까지 채워진 상태 유지) |
 | **5 계산·모니터** | 단계 5/6 · 계산 실행 및 모니터링 | RunBar(실행 상태 펄스 + 단계/SCF 반복/경과/현재 에너지 + **STOP**). 좌: **LogTerminal**(cp2k.out 라이브). 우: **스텝별 ConvergenceChart**(SCF \|ΔE\| 로그축, `step_histories` 기준으로 step1→그래프1·step2→그래프2 … **스텝 탭 또는 스텝별 개별 차트**로 분리, 단일 통합 차트 금지) + ConvStats | **라이브 미러로 전환**(현재 스텝·SCF 반복·마지막 ΔE·목표 + 로그) |
-| **6 리포트** | 단계 6/6 · 결과 리포트 | (계산 완료 전) 잠금 플레이스홀더: "리포트는 계산 완료 후 생성됩니다". 완료 시 밴드갭·DOS + **스텝별 수렴 차트**(`step_histories` 기준으로 스텝마다 하나씩 분리, step5와 동일하게 스텝 탭/개별 차트 — 단일 통합 차트 아님) 요약 PDF (재구축 시 marked+KaTeX, §8) | (전체 진행 100%) |
+| **6 리포트** | 단계 6/6 · 결과 리포트 | (계산 완료 전) 잠금 플레이스홀더. 완료 시 **7섹션 리포트(요약·구조·방법·물성 데이터·해석·품질·후속, `report_absorption.html` 형식)** 를 marked+KaTeX로 렌더 + **스텝별 수렴 차트**(`step_histories` 기준 분리, step5와 동일). **다중-CIF면 §4가 '구조별 주요 물성 종합 비교' 표**. 흡수 스펙트럼 곡선 없음 | (전체 진행 100%) |
 
 - **단계 이동/잠금**: 현재 단계 기준 한 단계 앞(`maxReached+1`)까지만 진입 허용, 그 이상은 레일에서 잠금(목업 `go()`/`renderRail()`). 키보드 ←/→ 지원(입력 포커스 시 제외). Next 라우팅에선 `router.push('/step-N')` + store의 `currentStep`/`maxReached`로 레일·진행 반영.
 - **루트 레이아웃**: `app/layout.tsx`는 페이퍼 배경 + 폰트(Fraunces/Inter/JetBrains Mono) + Provider. 글래스 컨테이너/배경 blob은 폐기(Lab Paper는 플랫).
@@ -668,7 +668,7 @@ function usePolling<T>(opts: UsePollingOptions<T>) {
 확정 목업은 hi-fi 시각 검증용이라 아래 기능은 단순화/생략됨. 재구축 시 `docs/features/*/api.md` + `data-models.md` 계약대로 구현:
 - **다중-CIF 비교 탭** — 단일 구조만 표시. (store엔 `structuresInfo[]` 자리 있음, §4.6)
 - **12-레벨 벤치마크** (`/api/benchmark/run`·`status`, 3초 폴링) — 목업에 화면 없음.
-- **4단계 플랜 인포그래픽**(FlowchartNode: cap/para/rect/diamond) — step-4는 MetaList + 자원 추정으로 단순화.
+- **4단계 플랜 인포그래픽**(FlowchartNode: cap/para/rect/diamond) — step-4는 MetaList로 단순화(자원 추정/합계 제거).
 - **6단계 리포트 렌더링**(marked + KaTeX) — step-6은 잠금 플레이스홀더만. 실제 PDF/마크다운+수식 렌더는 미구현.
 - **INP/SGE 코드 뷰어**(신택스 하이라이트), TDDFT 대시보드 등 도메인 카드 — §3.10 말미 "재구축 필요 카드" 목록 참조.
 

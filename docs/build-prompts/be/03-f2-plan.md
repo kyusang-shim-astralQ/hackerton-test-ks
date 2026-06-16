@@ -15,7 +15,7 @@
 - `docs/build-prompts/MVP-SCOPE.md`.
 
 ### 구현 (`backend/app/features/plan/`)
-- **service.py**: `PlanRequest`(atom_info + property + DFT params)로 플랜 프롬프트를 채워 `app/core/llm`을 통해 Anthropic 호출 → 응답을 파싱해 `steps[]`(각 `PlanStep`: step_name/run_type/inp_options/selected/…)와 `expert_tip` 생성. 항상 `req.atom_info`를 결과에 에코. **JSON 파싱 견고하게**(코드펜스 제거 등).
+- **service.py**: `PlanRequest`(atom_info + property + DFT params)로 플랜 프롬프트를 채워 `app/core/llm`을 통해 Anthropic 호출 → 응답을 파싱해 `steps[]`(각 `PlanStep`: step_name/run_type/inp_options/selected/…)와 `expert_tip` 생성. 항상 `req.atom_info`를 결과에 에코. **JSON 파싱 견고하게**(코드펜스 제거 등). (plan-prompt의 `{xml_context}`는 MVP에선 **빈 문자열** — schema_engine 미사용, Claude 지식에 의존.)
   - `CLAUDE_API_KEY`가 없거나 호출 실패 시 → `data-models.md`의 `PlanResult` 형태 **목 플랜**(예: GeomOpt→SCF→Band→DOS)으로 폴백해 흐름 유지.
 - **router.py**: `POST /generate-plan` → `{atom_info, steps[], expert_tip}`.
 

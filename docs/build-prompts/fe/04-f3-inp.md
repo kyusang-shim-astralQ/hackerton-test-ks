@@ -14,7 +14,7 @@
 - `docs/design-system.md` §4.2(4단계).
 
 ### 만들 것 (`app/(wizard)/step-4`)
-1. **AI 워크플로 검토**: wizard-store의 `steps[]`(f2 결과)를 가변 N-스텝 타임라인/체크리스트로 표시. 각 스텝 **제외 토글**(selected/exclude), run_type·소요·core·h 등 요약, 💡전문가 팁(expert_tip) 인라인. 합계(시간/core·h) 집계.
+1. **AI 워크플로 검토**: wizard-store의 `steps[]`(f2 결과)를 가변 N-스텝 타임라인/체크리스트로 표시. 각 스텝 **제외 토글**(selected/exclude), run_type·objective(목표) 등 요약, 💡전문가 팁(expert_tip) 인라인.
 2. **INP 생성**: [최종 INP/SGE 생성] → `POST /generate-inp`(body=store의 atom_info/steps(+exclude 반영)/옵션로 조립한 `InpRequest`). **다중-CIF면** f1에서 모은 여러 구조를 `InpRequest`의 다중 분기(`multi_atom_info`)로 함께 보내, 백엔드가 **구조별 × 스텝별** `.inp`를 생성하게 한다(파일명은 api.md의 단일/다중 규칙대로 `{base}_step{i}.inp` 등). 응답 `generated_files[]`를 store에 저장.
 3. **INP 미리보기**(선택): 생성된 `.inp` 텍스트를 모노 코드 뷰어로 표시(스텝/구조 클릭 시 해당 파일 강조, 다중-CIF면 구조별로 그룹핑). 성공 시 [다음/제출] → step-5(다중-CIF면 구조별 서브잡 N개로 제출됨을 안내).
 

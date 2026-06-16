@@ -115,7 +115,7 @@
 
 심사 기준은 "Claude를 **제대로** 썼는가"다. 작동만 시키지 말고 **활용이 드러나게** 한다.
 
-- **Claude API 호출 지점 3곳:** ① 플랜/.inp 생성(f2-plan) ② 에러 진단·수정(자가치유) ③ 리포트 작성(f5-report).
+- **Claude API 호출 지점 3곳:** ① 플랜 생성(f2-plan — `plan-prompt`) ② 에러 진단·수정(f4 자가치유 — `healing-prompt`) ③ 리포트 작성(f5-report — `report-prompt`). 셋 다 `docs/prompts/*.md`.
 - 각 호출은 **구조화된 출력(JSON 스키마 / tool use)** 으로 받는다 — 파싱 깨짐 방지.
 - 프롬프트는 호출 코드에 흩지 말고 **`docs/prompts/*.md`로 준비(반입 자산)** 하여, 빌드 시 각 기능의 **`prompts.py`** 로 모은다. 호출부는 import만.
 - **자가수정 과정을 UI/리포트에 노출** → "AI가 에러를 읽고 스스로 고쳤다"가 데모 하이라이트.
@@ -166,7 +166,8 @@ cd frontend && npm install && npm run dev
 CLAUDE_API_KEY=...
 USE_SGE=1                 # 1=실제 SGE(SSH) 제출, 0=목 스트림 폴백
 CLUSTER_HOST=...  CLUSTER_PORT=22  CLUSTER_USER=...  CLUSTER_PASSWORD=...
-CLUSTER_REMOTE_ROOT=...  CLUSTER_QUEUE=...  CLUSTER_PE=...  CLUSTER_MPI_RANKS=...
+CLUSTER_REMOTE_ROOT=...  CLUSTER_QUEUE=...
+CLUSTER_PE="16cpu 16"  CLUSTER_MPI_RANKS=8   # -pe엔 CLUSTER_PE 통째, mpiexec엔 -n CLUSTER_MPI_RANKS (랭크를 -pe에 붙이지 말 것)
 CP2K_ROOT=...  CP2K_DATA_DIR=...  CP2K_MPIEXEC=...  CP2K_SETVARS=...
 # frontend/.env.local
 NEXT_PUBLIC_API_BASE=http://localhost:8000

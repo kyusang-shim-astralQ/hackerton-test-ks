@@ -6,6 +6,10 @@
 # === 레거시 코드 (백지 해커톤: 레포에 포함하지 않음. 로컬 참조용) ===
 reference/
 
+# === 보고서 형식 참조(로컬 전용 — 구조는 docs/prompts의 리포트 md에 인라인) ===
+report_absorption.html
+/*.png
+
 # === python ===
 __pycache__/
 *.pyc

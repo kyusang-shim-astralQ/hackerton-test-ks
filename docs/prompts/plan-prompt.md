@@ -3,6 +3,7 @@
 - **사용처**: f2-plan 2단계 — 정밀 시뮬레이션 플랜 설계. (`be/03`이 참조)
 - **출력**: JSON `{ expert_tip, steps[] }` (각 step: step_idx/step_name/importance/run_type/physics_reason/objective/description/inp_options).
 - **템플릿 변수**(`str.format`): `{xml_context}`(CP2K 스키마 레퍼런스), `{active_tokens}`(1단계 추출 토큰), `{user_config}`(사용자 DFT 설정). JSON 예시의 `{{ }}`는 format 이스케이프 → 실제 전송 시 `{ }`.
+- **MVP 주의**: `{xml_context}`는 34MB `schema_engine`이 없으므로 **빈 문자열로 둔다**(Claude의 내장 CP2K 지식에 의존). 스키마 그라운딩을 강화하려면 reference의 `schema_engine` + `cp2k_input.xml`을 이식할 때 채운다.
 
 ```text
 너는 CP2K 계산 과학 수석 연구원이다. 
