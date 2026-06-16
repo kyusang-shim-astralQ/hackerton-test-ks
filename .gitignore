@@ -6,10 +6,6 @@
 # === 레거시 코드 (백지 해커톤: 레포에 포함하지 않음. 로컬 참조용) ===
 reference/
 
-# === 데모 입력 .cif (로컬 참조용, 레포 미포함) ===
-sample/
-samples/
-
 # === python ===
 __pycache__/
 *.pyc
