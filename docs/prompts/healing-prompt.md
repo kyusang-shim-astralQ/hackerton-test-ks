@@ -29,10 +29,14 @@
 
 [CP2K EXPERT KNOWLEDGE]
 1. 모든 계산은 Gamma-point만 사용한다. K-POINTS/KPOINTS는 절대 추가하지 마라.
-2. SCF 미수렴: OT가 발산하면 &DFT/&SCF/&MIXING/ALPHA를 0.1로 낮추거나, 큰 계(>100 atoms)는 &DFT/&SCF/&SMEAR(METHOD FERMI_DIRAC) + &DFT/&SCF/ADDED_MOS(20~50)를 추가하라. 사용자가 고른 알고리즘(OT/DIAGONALIZATION) 자체는 바꾸지 말고 파라미터로 해결하라.
-3. GEO_OPT 미수렴(MAXIMUM NUMBER OF ... STEPS): &MOTION/&GEO_OPT/MAX_ITER 증가 또는 MAX_FORCE/RMS_FORCE 완화, 필요 시 EPS_SCF를 더 타이트하게.
-4. 키워드/섹션 오류(unknown keyword/section, invalid value for enumeration): 해당 키워드를 스키마에 맞는 올바른 경로/값으로 교정한다.
+2. ★ 처방이 다음 제출에 반드시 반영되게 하라. 이 시스템은 제출 직전 enforcement가 `&DFT/&SCF/&OT`일 때 `&MIXING`을, 스미어 off일 때 `&SMEAR`를 자동 제거한다. 따라서:
+   - **거버닝 파라미터를 바꾸려면 `@PARAM/...` 줄을 써라**(enforcement가 유지하도록 시스템이 적용한다): SCF 알고리즘 전환 `@PARAM/SCF_ALGO DIAGONALIZATION`, 스미어 활성화 `@PARAM/USE_SMEAR true`(+ `@PARAM/SMEAR_TEMP 1000` + `@PARAM/ADDED_MOS 30`), 반복 한도 `@PARAM/MAX_SCF 200`. (그냥 `&SMEAR`/`&MIXING`만 트리에 넣으면 OT·non-smear enforcement가 지워서 무효가 된다.)
+   - **OT를 유지하는 작은 계**: `&DFT/&SCF/&OT/MINIMIZER CG`, `&DFT/&SCF/&OT/PRECONDITIONER FULL_ALL`, `&DFT/&SCF/&OUTER_SCF/MAX_SCF 50`, `&DFT/&SCF/&OUTER_SCF/EPS_SCF 1.0E-6` 처럼 OT 하위·OUTER_SCF로 처방하라(enforcement가 유지).
+   - **금속/전이금속 d-축퇴로 발산**: `@PARAM/USE_SMEAR true`(자동으로 DIAGONALIZATION + ADDED_MOS로 전환).
+3. GEO_OPT 미수렴(MAXIMUM NUMBER OF ... STEPS): &MOTION/&GEO_OPT/MAX_ITER 증가 또는 MAX_FORCE/RMS_FORCE 완화(이 MOTION 경로는 enforcement가 유지), 필요 시 `@PARAM/MAX_SCF`로 SCF 반복 상향.
+4. 키워드/섹션 오류(unknown keyword/section, invalid value for enumeration): 해당 키워드를 스키마에 맞는 올바른 경로/값으로 교정한다(이런 트리 교정은 그대로 유지된다).
 5. NO SUBSYS: &SUBSYS 하위(COORD, CELL, KIND)는 절대 수정/제안하지 마라(좌표·셀은 에이전트가 전담).
+6. 직전 시도와 **다른** 처방을 내라. 같은 처방을 반복하면 `.inp`가 안 바뀌어 무한 재시도가 된다 — 사다리를 한 단계 올려라(OT 튜닝 → DIAGONALIZATION+MIXING → SMEAR).
 
 [MISSION]
 1. [CORE ERROR MESSAGE]를 [SYSTEM CONTEXT]와 [FAILED INPUT STRUCTURE] 맥락에서 분석한다.
@@ -45,6 +49,8 @@ REASON_KR: (에러 원인에 대한 정밀 분석, 한글 1문장)
 FIX_KR: (시스템 맥락에 맞는 구체적 해결책, 한글 1문장)
 REASON: (Brief English explanation of why this fix works for this system)
 FIX:
-&DFT/&SCF/&MIXING/ALPHA 0.1
-&DFT/&SCF/&SMEAR/ADDED_MOS 30
+@PARAM/MAX_SCF 200
+&DFT/&SCF/&OT/MINIMIZER CG
+&DFT/&SCF/&OUTER_SCF/MAX_SCF 50
 ```
+> FIX 줄 규칙: `@PARAM/<KEY> <VALUE>` 줄은 거버닝 파라미터(시스템이 `suite_params`로 적용 → enforcement 유지), 나머지 `&경로형` 줄은 옵션 트리에 병합된다. `&END` 태그·`&SUBSYS` 하위는 넣지 마라.

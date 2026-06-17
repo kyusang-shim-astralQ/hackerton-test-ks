@@ -44,6 +44,7 @@
 6. **OT vs DIAGONALIZATION**: `kpoints`(유효값)·TDDFPT·smear 중 하나면 `DIAGONALIZATION`(+ kpoints면 `DFT.KPOINTS.SCHEME=MONKHORST-PACK ...`/`SYMMETRY F`), 아니면 사용자 `scf_algo`(없으면 OT). OT면 `SCF.OT{MINIMIZER:DIIS, PRECONDITIONER:FULL_SINGLE_INVERSE}` + DIAGONALIZATION/MIXING 제거. DIAG면 `SCF.DIAGONALIZATION{}` + OT 제거.
 7. 최종: `MGRID.CUTOFF`, `SCF.EPS_SCF`, `SCF.MAX_SCF`(mandatory에서), `ignore_scf_failure`면 `SCF.IGNORE_CONVERGENCE_FAILURE .TRUE.`, smear=False면 SMEAR 제거.
 > 우리 제품은 **Gamma-point 전용**(k-point 미사용)이므로 `valid_kpts`는 항상 거짓 경로로 둔다 → 사실상 OT/사용자 알고리즘 경로만 사용. (kpoints 분기 코드는 두되 트리거 안 됨.)
+> **★ enforcement는 `mandatory`(거버닝 파라미터)로 강제하며 3-pass의 맨 마지막에 실행된다.** `use_smear=False`면 `SMEAR` 제거, `scf_algo=OT`면 `MIXING`/`DIAGONALIZATION` 제거, `scf_algo`/`max_scf`/`eps_scf`/`cutoff`/파일을 항상 덮어쓴다. 따라서 **f4 자가치유(be/05)가 SCF 알고리즘·스미어·MAX_SCF 등을 바꾸려면 옵션 트리가 아니라 `mandatory`(= `suite_params`)를 갱신**해야 변경이 살아남는다 — 트리에만 넣은 `MIXING/SMEAR/ADDED_MOS`는 여기서 도로 지워진다(be/05 **★ 핵심 규칙**). 단, OT 하위 `MINIMIZER`/`PRECONDITIONER`는 `setdefault`로 채우므로 자가치유가 먼저 넣은 값은 **유지**되고, `OUTER_SCF`·`MOTION/*`·키워드/enum/파일명 교정도 유지된다.
 
 **A-5. `dict_to_tree_schema_aware(options, current_path)` → node list**: `@children`→freetext 노드. list 값→중복 keyword 노드들. dict 값→section 노드(`name`=공백/`_DUPL_` 앞 순수명, `param`=키의 param 또는 `@param`, `children`=재귀). 그 외→keyword 노드(스키마 ENUM이면 값 UPPER).
 
@@ -60,7 +61,7 @@
 ### C. `app/features/inp/service.py` (재구현)
 - `build_full_inp(tree, atom_info, step_idx, **kw)`:
   1. tree(list/dict)→`parse_path_based_options`/copy로 `ai_options`.
-  2. `use_smear`면 `FORCE_EVAL/DFT/SCF/SMEAR/{METHOD FERMI_DIRAC, ELECTRONIC_TEMPERATURE <temp>}` 주입 + `SCF/ADDED_MOS 20`(없으면). 아니면 SMEAR 재귀 제거.
+  2. `use_smear`면 `FORCE_EVAL/DFT/SCF/SMEAR/{METHOD FERMI_DIRAC, ELECTRONIC_TEMPERATURE <temp>}` 주입 + `SCF/ADDED_MOS <kwargs.added_mos 또는 20>`(없으면). 아니면 SMEAR 재귀 제거. (`added_mos`/`max_scf`/`eps_scf`는 mandatory로 받아 `_enforce_physics`가 강제 — f4 자가치유가 이 값을 올리면 그대로 반영된다.)
   3. **비직교 셀**(cell_angles가 90°에서 5°↑ 벗어남)이면 `SCF/MIXING/ALPHA 0.1`+`SCF/OUTER_SCF/MAX_SCF 50` 주입.
   4. **3-pass**: `for _ in range(3): ai_options,_ = healing_engine.validate_and_correct(ai_options, mandatory)`(mandatory에 run_type/step_idx/cutoff/functional/basis_set/method/scf_algo/eps_scf/atom_info 등). `validate_and_correct`는 be/05의 self_healing(= schema_engine.validate_and_relocate + physics_rules.apply_physics_rules).
   5. `schema_engine.dict_to_tree_schema_aware(ai_options)` → ROOT 노드 → `tree_to_lines` → `.inp` 텍스트.
