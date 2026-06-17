@@ -67,7 +67,7 @@
   `backend/app/{ main.py, core/(config·llm·sge), schemas/common.py, shared/, features/<f1..f6>/(router·service·schemas).py }`
 - **Frontend:** **Next.js(App Router) + TypeScript + Tailwind + shadcn/ui**, 디자인 **Lab Paper(`docs/design-system.md`)**. 대시보드는 폴링으로 작업 상태 표시.
 - **AI:** Anthropic Claude — 최신·최강 모델. 모델 id·파라미터·가격은 기억 말고 **`claude-api` 스킬 확인**.
-- **env 키:** **`CLAUDE_API_KEY`**(LLM) + **클러스터(SSH/SGE) `USE_SGE`·`CLUSTER_HOST`/`CLUSTER_PORT`/`CLUSTER_USER`/`CLUSTER_PASSWORD`·`CLUSTER_REMOTE_ROOT`·`CLUSTER_QUEUE`·`CLUSTER_PE`·`CLUSTER_MPI_RANKS`·`CP2K_ROOT`/`CP2K_DATA_DIR`/`CP2K_MPIEXEC`/`CP2K_SETVARS`**(f4 실제 제출용). **전부 하드코딩 금지 — `.env`(gitignore)만**; 특히 `CLUSTER_PASSWORD`는 로그·응답·문서에도 노출 금지.
+- **env 키:** **`CLAUDE_API_KEY`**(LLM) + **클러스터(SSH/SGE) `USE_SGE`·`CLUSTER_HOST`/`CLUSTER_PORT`/`CLUSTER_USER`/`CLUSTER_PASSWORD`·`CLUSTER_REMOTE_ROOT`·`CLUSTER_QUEUE`·`CLUSTER_PE`·`CLUSTER_MPI_RANKS`·`CP2K_ROOT`/`CP2K_DATA_DIR`/`CP2K_MPIEXEC`/`CP2K_SETVARS`/`CP2K_VENV`**(f4 실제 제출용; `CP2K_VENV`=run.sh가 source할 클러스터 venv activate 경로). **전부 하드코딩 금지 — `.env`(gitignore)만**; 특히 `CLUSTER_PASSWORD`는 로그·응답·문서에도 노출 금지.
 - **포트:** backend `:8000`, frontend `:3000` (`NEXT_PUBLIC_API_BASE=http://localhost:8000`).
 - **배포(선택):** Replit(Autoscale) 등. 로컬 시뮬레이션은 위 :8000/:3000.
 - 데모는 가능한 **실제 결과**로: 클러스터 연결 시 **`USE_SGE=1`**로 f4가 실제 `qsub` 제출→결과로 f5가 실측 리포트. 클러스터 없으면 **`USE_SGE=0`**(백엔드 목) + 프런트 **`NEXT_PUBLIC_MOCK=1`**로 6단계 전체를 끝까지 시연.
@@ -169,6 +169,7 @@ CLUSTER_HOST=...  CLUSTER_PORT=22  CLUSTER_USER=...  CLUSTER_PASSWORD=...
 CLUSTER_REMOTE_ROOT=...  CLUSTER_QUEUE=...
 CLUSTER_PE="16cpu 16"  CLUSTER_MPI_RANKS=8   # -pe엔 CLUSTER_PE 통째, mpiexec엔 -n CLUSTER_MPI_RANKS (랭크를 -pe에 붙이지 말 것)
 CP2K_ROOT=...  CP2K_DATA_DIR=...  CP2K_MPIEXEC=...  CP2K_SETVARS=...
+CP2K_VENV=...             # run.sh가 source할 클러스터 venv activate 경로 (reference SGE_TEMPLATE 필수; 없으면 qsub 잡 즉사)
 # frontend/.env.local
 NEXT_PUBLIC_API_BASE=http://localhost:8000
 NEXT_PUBLIC_MOCK=0        # 실제 백엔드 연결(USE_SGE=1). 클러스터 없이 목만 시연할 땐 1

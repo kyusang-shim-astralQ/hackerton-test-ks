@@ -1,21 +1,34 @@
-# Healing Prompt (자가치유 — `heal_with_ai`)
+# Healing Prompt (자가치유 — `heal_with_ai`) — ★ reference 원문 그대로
 
-> ※ 이 프롬프트는 self_healing의 `heal_with_ai`가 사용하는 것이다 — f4 재구현(be/05) 시 `heal_with_ai`가 아래 프롬프트로 Claude를 호출한다(`schema_engine.get_manual_snippet`로 XML 스키마 컨텍스트 주입).
+> 이 프롬프트는 self_healing의 `heal_with_ai`가 쓰는 **reference 원문**이다(영문, `[CP2K XML SCHEMA REFERENCE]` 주입 포함). f4 재구현(be/05 B-4) 시 이 텍스트를 `prompts.py`로 모아 `f-string`으로 채운다. **임의로 줄이거나 `@PARAM/`·한글화 등으로 바꾸지 말 것** — 그건 폐기된 가공물이다.
 
-- **사용처**: f4-jobs — CP2K 작업 실패 시 `.out` 로그를 읽고 `.inp`를 자동 수정. (`be/05`가 참조) — Claude API **3번째 호출 지점**(① 플랜 ② **치유** ③ 리포트).
-- **출력 형식**: 4파트 — `REASON_KR` / `FIX_KR` / `REASON` / `FIX:`(그 아래 **경로형 옵션** 라인들). FIX는 f3의 `inp_options`와 동일한 경로형(`&` 없이 `/`로 구분, `&END` 금지)이라 그대로 `.inp`에 병합 가능.
-- **템플릿 변수**(`str.format`): `{system_context}`(원자수·셀·주기성·SCF알고·물성·원소), `{current_inp}`(실패한 `.inp` 전문), `{core_error}`(로그에서 추출한 핵심 에러), `{log_tail}`(로그 말미), `{history_msg}`(이전 시도 처방 — 같은 에러 반복 방지).
-- **MVP 주의**: 34MB 스키마 엔진을 쓰지 않으므로 원본의 `[CP2K XML SCHEMA REFERENCE]` 주입은 **생략**(AI의 CP2K 지식 + 아래 EXPERT KNOWLEDGE로 충분, 잘못된 처방은 재시도 루프가 수렴시킴). 모든 계산은 **Gamma-point**(K-POINTS 미사용).
+- **사용처**: f4-jobs(그리고 f6 벤치마크) — CP2K 실패 시 `.out` 로그를 읽고 `.inp`를 자동 수정. Claude API **3번째 호출 지점**(① 플랜 ② **치유** ③ 리포트).
+- **모델/파라미터**: `max_tokens = 1000`. 모델 id는 **`claude-api` 스킬 확인**(reference는 `claude-sonnet-4-6` 사용; 코드에 박지 말고 설정/스킬 기준). 호출은 `app/core/llm`(Anthropic) 경유.
+- **placeholders**(`f-string`): `{system_context}`, `{has_kpts}`(`"YES"`/`"NO"`), `{current_inp}`(현재 `.inp` 전문), `{xml_context}`(`schema_engine.get_manual_snippet` 토큰별 합본), `{core_error}`, `{log_tail}`(★ reference는 **원본 log_tail 그대로** 주입 — 압축본 아님), `{history_msg}`.
+- **`system_context` 구성**(reference 그대로):
+  ```text
+  - Atom Count: {atom_count}
+  - Cell Size: {cell}
+  - Periodic: {periodic}
+  - Mode: {mode} (If BENCHMARK, follow reference paths strictly)
+  - Current SCF Algo: {scf_algo} (USER INTENT: Do NOT change this algorithm. Focus on adjusting parameters instead.)
+  - Target Property: {property}
+  - Elements: {el1, el2, ...}
+  ```
+
+## 프롬프트 본문 (verbatim)
 
 ```text
-너는 CP2K 계산 실패를 진단하고 입력파일을 고치는 수석 연구원이다.
-
 [SYSTEM CONTEXT]
 {system_context}
+K-POINTS ACTIVE: {has_kpts} (CRITICAL: If YES, OT algorithm is NOT allowed!)
 
 [FAILED INPUT STRUCTURE]
-이 입력이 에러를 일으켰다. 계층 구조의 논리적 모순을 찾아라:
+This is the input file that caused the error. Look for logical contradictions in its hierarchy:
 {current_inp}
+
+[CP2K XML SCHEMA REFERENCE]
+{xml_context}
 
 [CORE ERROR MESSAGE FROM LOG]
 {core_error}
@@ -25,32 +38,41 @@
 
 [VALIDATION & ATTEMPT HISTORY]
 {history_msg}
-(주의: 최근 키워드를 제거했다면, 같은 처방을 반복하지 말고 스키마에 맞는 다른 경로/파라미터 조합을 제안하라.)
+(Note: If keywords were recently dropped, suggest a different path or parameter combination that fits the schema.)
 
 [CP2K EXPERT KNOWLEDGE]
-1. 모든 계산은 Gamma-point만 사용한다. K-POINTS/KPOINTS는 절대 추가하지 마라.
-2. ★ 처방이 다음 제출에 반드시 반영되게 하라. 이 시스템은 제출 직전 enforcement가 `&DFT/&SCF/&OT`일 때 `&MIXING`을, 스미어 off일 때 `&SMEAR`를 자동 제거한다. 따라서:
-   - **거버닝 파라미터를 바꾸려면 `@PARAM/...` 줄을 써라**(enforcement가 유지하도록 시스템이 적용한다): SCF 알고리즘 전환 `@PARAM/SCF_ALGO DIAGONALIZATION`, 스미어 활성화 `@PARAM/USE_SMEAR true`(+ `@PARAM/SMEAR_TEMP 1000` + `@PARAM/ADDED_MOS 30`), 반복 한도 `@PARAM/MAX_SCF 200`. (그냥 `&SMEAR`/`&MIXING`만 트리에 넣으면 OT·non-smear enforcement가 지워서 무효가 된다.)
-   - **OT를 유지하는 작은 계**: `&DFT/&SCF/&OT/MINIMIZER CG`, `&DFT/&SCF/&OT/PRECONDITIONER FULL_ALL`, `&DFT/&SCF/&OUTER_SCF/MAX_SCF 50`, `&DFT/&SCF/&OUTER_SCF/EPS_SCF 1.0E-6` 처럼 OT 하위·OUTER_SCF로 처방하라(enforcement가 유지).
-   - **금속/전이금속 d-축퇴로 발산**: `@PARAM/USE_SMEAR true`(자동으로 DIAGONALIZATION + ADDED_MOS로 전환).
-3. GEO_OPT 미수렴(MAXIMUM NUMBER OF ... STEPS): &MOTION/&GEO_OPT/MAX_ITER 증가 또는 MAX_FORCE/RMS_FORCE 완화(이 MOTION 경로는 enforcement가 유지), 필요 시 `@PARAM/MAX_SCF`로 SCF 반복 상향.
-4. 키워드/섹션 오류(unknown keyword/section, invalid value for enumeration): 해당 키워드를 스키마에 맞는 올바른 경로/값으로 교정한다(이런 트리 교정은 그대로 유지된다).
-5. NO SUBSYS: &SUBSYS 하위(COORD, CELL, KIND)는 절대 수정/제안하지 마라(좌표·셀은 에이전트가 전담).
-6. 직전 시도와 **다른** 처방을 내라. 같은 처방을 반복하면 `.inp`가 안 바뀌어 무한 재시도가 된다 — 사다리를 한 단계 올려라(OT 튜닝 → DIAGONALIZATION+MIXING → SMEAR).
+1. OT Compatibility: OT (Orbital Transformation) is FAST but works ONLY for systems with a Large Gap and NO K-POINTS. 
+   - If K-POINTS is YES, suggest &DFT/&SCF/&DIAGONALIZATION.
+2. Large Systems (>100 atoms): Convergence often requires Smearing.
+   - Suggest adding &DFT/&SCF/&SMEAR with &DFT/&SCF/ADDED_MOS (at least 20-50).
+3. Memory/Convergence: If SCF sloshes, reduce &DFT/&SCF/&MIXING/ALPHA to 0.1.
+4. Benchmark Sync: If Mode is BENCHMARK, preserve the original section names (e.g., &XC_FUNCTIONAL PBE) instead of splitting them.
+5. NO SUBSYS: Do NOT suggest or modify anything under &SUBSYS (COORD, CELL, KIND). This is strictly managed by the agent.
+6. PRESERVE the user's requested [Current SCF Algo]. If convergence fails, adjust MIXING, ALPHA, SMEAR, or ADDED_MOS instead of changing the algorithm itself.
 
 [MISSION]
-1. [CORE ERROR MESSAGE]를 [SYSTEM CONTEXT]와 [FAILED INPUT STRUCTURE] 맥락에서 분석한다.
-2. 왜 실패했는지 규명한다(경로 불일치, 계 크기에 안 맞는 설정, 누락된 필수 하위섹션 등).
-3. 이 시스템 맥락에 맞는 수정을 '경로형'으로 제시한다. 경로는 정확해야 하고 &END 태그는 넣지 마라.
-4. COORD/CELL/KIND는 절대 건드리지 마라.
+1. Analyze the [CORE ERROR MESSAGE] in the context of [SYSTEM CONTEXT] and [FAILED INPUT STRUCTURE].
+2. Identify why the current input failed (e.g., path mismatch, invalid algo for system size, or missing required sub-section).
+3. Provide a contextual fix in 'Path-based' format. Ensure paths are precise and follow the [CP2K XML SCHEMA REFERENCE].
+4. DO NOT include &END tags.
+5. NEVER suggest modifications to COORD, CELL, or KIND.
+6. PRESERVE the user's requested [Current SCF Algo]. If convergence fails, adjust MIXING, ALPHA, SMEAR, or ADDED_MOS instead of changing the algorithm itself.
 
 [FORMAT]
-REASON_KR: (에러 원인에 대한 정밀 분석, 한글 1문장)
-FIX_KR: (시스템 맥락에 맞는 구체적 해결책, 한글 1문장)
-REASON: (Brief English explanation of why this fix works for this system)
+REASON_KR: (에러 원인에 대한 정밀한 분석 결과, 한글 1문장)
+FIX_KR: (이 시스템 맥락에 맞는 구체적인 해결책, 한글 1문장)
+REASON: (Brief English explanation focusing on why this fix works for this specific system)
 FIX:
-@PARAM/MAX_SCF 200
-&DFT/&SCF/&OT/MINIMIZER CG
-&DFT/&SCF/&OUTER_SCF/MAX_SCF 50
+&DFT/&SCF/&DIAGONALIZATION/ALGORITHM STANDARD
+&DFT/&SCF/&MIXING/ALPHA 0.1
 ```
-> FIX 줄 규칙: `@PARAM/<KEY> <VALUE>` 줄은 거버닝 파라미터(시스템이 `suite_params`로 적용 → enforcement 유지), 나머지 `&경로형` 줄은 옵션 트리에 병합된다. `&END` 태그·`&SUBSYS` 하위는 넣지 마라.
+
+## 응답 파싱 (reference verbatim — be/05 B-4와 동일)
+- `reason_kr = re.search(r"REASON_KR:\s*(.*)", text).group(1) if "REASON_KR:" in text else "분석 중..."`
+- `fix_kr   = re.search(r"FIX_KR:\s*(.*)", text).group(1) if "FIX_KR:" in text else "수정 중..."`
+- `reason_en= re.search(r"REASON:\s*(.*)", text).group(1) if "REASON:" in text else "AI Analysis"`
+- `fix_part = text.split("FIX:")[1] if "FIX:" in text else text`
+- `fix_lines = [l.strip() for l in fix_part.splitlines() if '/' in l and len(l.split()) >= 2]`
+- `fix_lines` 있으면 `last_attempt={"signature":sig,"reason":reason_en,"fixes":fix_lines}` → 트리에 `_deep_update` → `validate_and_correct` → 3-튜플 `(options, [log], msg)`. 없으면/예외면 `(options, [실패문구], "AI 분석 실패")`.
+
+> ※ FIX는 `&`-경로형(`&DFT/&SCF/...`, `&END` 금지)이며 `'/'` 포함 + 2토큰 이상 줄만 채택된다. 코드 측 `parse_path_based_options`가 `&`를 제거하고 경로로 분해한다.
