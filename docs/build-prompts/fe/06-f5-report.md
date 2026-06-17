@@ -18,7 +18,7 @@
 2. **렌더링**: 응답 `report`(마크다운)를 `react-markdown` + KaTeX(`rehype-katex`/`remark-math`)로 렌더(수식 지원). `summary`(final_energy/target_property)와 스텝별 표를 KPI 카드/테이블로. **수렴 차트는 `step_histories` 기준 스텝별로 분리**(스텝 탭 또는 스텝별 개별 차트 — 여러 스텝을 한 차트에 합치지 말 것). **다중-CIF(`is_multi`)면** 구조 간 **비교 리포트**로 — 구조별 final_energy/target_property를 나란히 비교하는 표/차트를 추가하고, 구조별 스텝 차트는 구조 탭 아래에 둔다. 리포트 본문은 **`report_absorption.html` 형식의 7섹션**(1.요약 2.구조 3.방법 4.물성 데이터 5.해석 6.품질 7.후속)으로 오고 **흡수 스펙트럼 곡선은 없으며**, 다중-CIF의 §4 '구조별 주요 물성 종합 비교' 표(행=구조, 열=전체에너지+타겟 물성+영역/분류; 동일에너지면 isostructural)를 표로 또렷이 렌더한다.
 3. **다운로드**: [전체 결과 (.tar.gz)] → `GET /download-job/{job_name}`(blob 저장). [새 분석 시작] → wizard-store **`reset()`**(상태 초기화 + `persist.clearStorage()`로 localStorage 비움; design-system §4.6) 후 step-1.
 
-4. **벤치마크 진입 버튼 (★ 무조건 리포트 하단)**: step-6 리포트 화면 **맨 아래에 [벤치마크 실행] 버튼**을 배치한다 → 클릭 시 f6 벤치마크 뷰(`fe/07-f6-benchmark`; 별도 라우트 또는 하단 펼침)로 진입. (벤치마크는 항상 6단계 리포트 밑에 위치.)
+4. **벤치마크 진입 버튼 (보조 진입 — 리포트 하단)**: step-6 리포트 화면 **맨 아래에 [벤치마크 실행] 버튼**을 배치한다 → 클릭 시 **독립 라우트 `/benchmark`**(`fe/07-f6-benchmark`)로 이동. ※ 벤치마크는 flow와 독립이라 **주 진입은 좌측 StepRail 상시 행(첫 화면부터, fe/01)**; 이 리포트 하단 버튼은 보조 진입이다(둘 다 같은 `/benchmark`).
 
 ### ★ MOCK MODE
 `NEXT_PUBLIC_MOCK === "1"`이거나 완료 결과가 없으면:

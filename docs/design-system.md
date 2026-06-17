@@ -53,6 +53,7 @@ app/
     step-4/page.tsx          # AI 제안 플랜 확인
     step-5/page.tsx          # 제출 + 실시간 모니터링(터미널 + 수렴 차트)
     step-6/page.tsx          # 최종 리포트
+    benchmark/page.tsx       # ★ 12-레벨 정확도 벤치마크 (flow와 독립 — /benchmark, AppShell 재사용; StepRail 상시 행/step-6 하단에서 진입)
 components/
   ui/                        # shadcn/ui 베이스 + 디자인시스템 공유 컴포넌트 (Button, Card, Badge, StatusBadge, Tabs, FormField, Table, LogTerminal, ConvergenceChart ...)
   layout/                    # AppShell(3-zone grid), StepRail, Workspace(work-head + work-body), SummaryPanel, LangSwitch
@@ -322,6 +323,9 @@ interface StepRailProps {
   current: number;            // 현재 단계
   maxReached: number;         // 도달한 최댓값 → done/locked 판정
   onStepClick?: (i: number) => void; // n>maxReached+1 이면 비활성(잠금)
+  // ★ 벤치마크 상시 진입 — flow와 독립. 6단계 잠금 규칙과 무관하게 항상 활성.
+  onBenchmarkClick?: () => void;     // → /benchmark 라우트 (router.push)
+  benchmarkActive?: boolean;         // /benchmark에 있을 때 accent 강조
 }
 // 상태별(목업 .step):
 //  done      .is-done    → step-dot: ok-wash 배경 + ok 글자 + 체크 SVG
@@ -331,6 +335,10 @@ interface StepRailProps {
 // 항목 레이아웃: grid 28px/1fr, step-dot 26px 원형(radius-pill, mono 숫자).
 // 레일 셸: card 배경 + 우측 1px hairline, 상단 brand(아톰 마크 + serif 이름), 하단 rail-foot(세션 표시).
 // 잠금 규칙(목업 go()): 한 단계 앞(maxReached+1)까지만 진입 허용, 그 이상은 잠금.
+// ★ 벤치마크 진입 행: 6단계 목록과 rail-foot 사이에 구분선(border-top hairline) + 1행 추가.
+//   FlaskConical(lucide) 아이콘 + "정확도 벤치마크"(title) + "Benchmark · 1–12"(mono label).
+//   flow와 독립이므로 **항상 활성**(locked 규칙 적용 안 함, current/maxReached와 무관) — step-1 첫 화면부터 클릭 가능.
+//   클릭 → onBenchmarkClick(/benchmark). benchmarkActive면 current와 동일한 accent-wash 강조.
 ```
 
 ### 3.6 Segmented & ChipToggle — `components/ui/segmented.tsx`, `chip-toggle.tsx`
@@ -473,7 +481,7 @@ interface MoleculeViewerProps {
 ```
 
 - **그리드(목업 실제값)**: `grid-template-columns: 280px minmax(0,1fr) 300px;` / `grid-template-rows: minmax(0, 1fr);` / `height:100vh; overflow:hidden;`. 우측 패널 접힘 시 `280px minmax(0,1fr) 0`으로 전환(`.summary-collapsed`), `.28s cubic-bezier(.4,0,.2,1)` 트랜지션.
-- **좌측 — StepRail(`.rail`)**: 6단계 세로 레일. 상단 brand(아톰 마크 + serif 이름 + mono 서브), 가운데 단계 목록(`완료 ✓ / 현재 ● / 잠금 ○`), 하단 rail-foot(세션 표시). `card` 배경 + 우측 1px hairline, 자체 `overflow-y:auto`(min-height:0). 컴포넌트 계약은 §3.5.
+- **좌측 — StepRail(`.rail`)**: 6단계 세로 레일. 상단 brand(아톰 마크 + serif 이름 + mono 서브), 가운데 단계 목록(`완료 ✓ / 현재 ● / 잠금 ○`), **그 아래 구분선 + [정확도 벤치마크] 상시 진입 행(flow와 독립 — 잠금 규칙 무관, 첫 화면부터 항상 클릭 가능, → `/benchmark`)**, 하단 rail-foot(세션 표시). `card` 배경 + 우측 1px hairline, 자체 `overflow-y:auto`(min-height:0). 컴포넌트 계약은 §3.5.
 - **가운데 — Workspace(`.work`)**: 세로 flex. `work-head`(flex:none, 고정)는 eyebrow(단계 N/6) + serif h1 + 설명 + 우측 head-nav(이전 아이콘 / pager / 다음 primary). `work-body`(flex:1, **내부 스크롤**)는 단계별 `.panel`을 교체 표시(`.panel.is-active`만 `display:block`, fade-in). 헤더 메타는 단계별 META 맵(목업 `META[1..6]`)으로 교체.
 - **우측 — SummaryPanel(`.summary`)**: 접기/펼치기 토글(`.panel-toggle` chevron + 접힘 시 우측 가장자리 `.summary-reopen` 탭). 상태 localStorage 영속(`cp2k.summaryCollapsed`). **step-aware 점진 채움**: 각 블록은 자기 단계에 도달해야 값이 채워지고, 그 전엔 `— 선택 전/미선택/미설정`(ink-faint). **5단계에선 stage 목록이 라이브 미러(run-mirror)로 전환**. 상세는 §4.4.
 
@@ -487,7 +495,7 @@ interface MoleculeViewerProps {
 | **3 옵션** | 단계 3/6 · DFT 계산 옵션 | 좌: 전자 구조 설정(범함수·기저·유사퍼텐셜·컷오프·스핀 Segmented). 우: SCF 수렴 설정(EPS_SCF·최대반복·혼합α·스미어링·최적화기 Segmented). 하단 전체폭: **AI 계산 플랜 카드**(생성 버튼 → plan-out 로그 펼침) | 핵심 옵션 블록(범함수·기저·컷오프·EPS_SCF) |
 | **4 플랜** | 단계 4/6 · 계산 플랜 확정 | 확정 플랜 MetaList(① GeomOpt ② SCF ③ Band ④ DOS, "4 stages" 배지) | (옵션까지 채워진 상태 유지) |
 | **5 계산·모니터** | 단계 5/6 · 계산 실행 및 모니터링 | RunBar(실행 상태 펄스 + 단계/SCF 반복/경과/현재 에너지 + **STOP**). 좌: **LogTerminal**(cp2k.out 라이브). 우: **스텝별 ConvergenceChart**(SCF \|ΔE\| 로그축, `step_histories` 기준으로 step1→그래프1·step2→그래프2 … **스텝 탭 또는 스텝별 개별 차트**로 분리, 단일 통합 차트 금지) + ConvStats | **라이브 미러로 전환**(현재 스텝·SCF 반복·마지막 ΔE·목표 + 로그) |
-| **6 리포트** | 단계 6/6 · 결과 리포트 | (계산 완료 전) 잠금 플레이스홀더. 완료 시 **7섹션 리포트(요약·구조·방법·물성 데이터·해석·품질·후속, `report_absorption.html` 형식)** 를 marked+KaTeX로 렌더 + **스텝별 수렴 차트**(`step_histories` 기준 분리, step5와 동일). **다중-CIF면 §4가 '구조별 주요 물성 종합 비교' 표**. 흡수 스펙트럼 곡선 없음. **화면 맨 아래에 [벤치마크 실행] 버튼(f6 진입 — 무조건 리포트 하단)** | (전체 진행 100%) |
+| **6 리포트** | 단계 6/6 · 결과 리포트 | (계산 완료 전) 잠금 플레이스홀더. 완료 시 **7섹션 리포트(요약·구조·방법·물성 데이터·해석·품질·후속, `report_absorption.html` 형식)** 를 marked+KaTeX로 렌더 + **스텝별 수렴 차트**(`step_histories` 기준 분리, step5와 동일). **다중-CIF면 §4가 '구조별 주요 물성 종합 비교' 표**. 흡수 스펙트럼 곡선 없음. **화면 맨 아래에 [벤치마크 실행] 버튼(f6 진입, 보조 위치)** — 단, 벤치마크는 flow와 독립이라 **주 진입은 좌측 StepRail 상시 행(§3.5, 첫 화면부터)**; 둘 다 같은 `/benchmark` 라우트로 간다 | (전체 진행 100%) |
 
 - **단계 이동/잠금**: 현재 단계 기준 한 단계 앞(`maxReached+1`)까지만 진입 허용, 그 이상은 레일에서 잠금(목업 `go()`/`renderRail()`). 키보드 ←/→ 지원(입력 포커스 시 제외). Next 라우팅에선 `router.push('/step-N')` + store의 `currentStep`/`maxReached`로 레일·진행 반영.
 - **루트 레이아웃**: `app/layout.tsx`는 페이퍼 배경 + 폰트(Fraunces/Inter/JetBrains Mono) + Provider. 글래스 컨테이너/배경 blob은 폐기(Lab Paper는 플랫).
