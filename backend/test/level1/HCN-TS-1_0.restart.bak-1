@@ -1,0 +1,157 @@
+ # Version information for this restart file 
+ # current date 2026-05-08 17:19:30.101
+ # current working dir /DATA/lab07/hglee/cp2k_agent/test/level1
+ # Program compiled at                                       2026-03-01 16:41:12
+ # Program compiled on                                                    master
+ # Program compiled for                                                   x86_64
+ # Source code revision number                                       git:5e54ba2
+ &GLOBAL
+   PROJECT_NAME "HCN-TS"
+   RUN_TYPE GEO_OPT
+ &END GLOBAL
+ &MOTION
+   &GEO_OPT
+     TYPE TRANSITION_STATE
+     OPTIMIZER CG
+     MAX_ITER 1
+     &CG
+       MAX_STEEP_STEPS 1
+       &LINE_SEARCH
+         TYPE 2PNT
+       &END LINE_SEARCH
+     &END CG
+     &TRANSITION_STATE
+       METHOD DIMER
+       &DIMER
+         DR  1.0000000000000000E-004
+         INTERPOLATE_GRADIENT T
+         ANGLE_TOLERANCE  1.7453292519943296E-003
+         &ROT_OPT
+           OPTIMIZER CG
+           MAX_ITER 1
+           STEP_START_VAL 1
+           &CG
+             MAX_STEEP_STEPS 0
+             &LINE_SEARCH
+               TYPE 2PNT
+             &END LINE_SEARCH
+           &END CG
+         &END ROT_OPT
+         &DIMER_VECTOR
+             7.3709436825374919E-001 -2.7082809211873937E-001 -2.2921921708132391E-002 -3.2797662802004537E-002 \
+             1.3791569099595679E-002  2.0401315212454436E-002
+            -3.1705818396744395E-001 -1.5666973838857623E-001 -5.0602886838574412E-001
+         &END DIMER_VECTOR
+       &END DIMER
+     &END TRANSITION_STATE
+   &END GEO_OPT
+   &PRINT
+     &RESTART SILENT
+       &EACH
+         GEO_OPT 1
+       &END EACH
+     &END RESTART
+   &END PRINT
+ &END MOTION
+ &FORCE_EVAL
+   METHOD QS
+   &DFT
+     BASIS_SET_FILE_NAME GTH_BASIS_SETS
+     POTENTIAL_FILE_NAME GTH_POTENTIALS
+     &SCF
+       MAX_SCF 200
+       EPS_SCF  9.9999999999999995E-007
+       SCF_GUESS ATOMIC
+       &OT T
+         MINIMIZER DIIS
+         N_HISTORY_VEC 7
+         PRECONDITIONER FULL_SINGLE_INVERSE
+       &END OT
+       &OUTER_SCF T
+         EPS_SCF  9.9999999999999995E-007
+         MAX_SCF 1
+       &END OUTER_SCF
+       &PRINT
+         &RESTART SILENT
+           LOG_PRINT_KEY T
+         &END RESTART
+       &END PRINT
+     &END SCF
+     &QS
+       EXTRAPOLATION_ORDER 3
+     &END QS
+     &MGRID
+       CUTOFF  5.0000000000000000E+001
+     &END MGRID
+     &XC
+       DENSITY_CUTOFF  1.0000000000000000E-010
+       GRADIENT_CUTOFF  1.0000000000000000E-010
+       TAU_CUTOFF  1.0000000000000000E-010
+       &XC_FUNCTIONAL NO_SHORTCUT
+         &PADE T
+         &END PADE
+       &END XC_FUNCTIONAL
+     &END XC
+     &POISSON
+       POISSON_SOLVER MT
+       PERIODIC NONE
+       &MT
+       &END MT
+     &END POISSON
+   &END DFT
+   &SUBSYS
+     &CELL
+       A  1.0000000000000002E+001  0.0000000000000000E+000  0.0000000000000000E+000
+       B  0.0000000000000000E+000  1.0000000000000002E+001  0.0000000000000000E+000
+       C  0.0000000000000000E+000  0.0000000000000000E+000  1.0000000000000002E+001
+       PERIODIC NONE
+       MULTIPLE_UNIT_CELL 1 1 1
+     &END CELL
+     &COORD
+       N -5.0000000000000001E-004  2.9999999999999997E-004  0.0000000000000000E+000
+       C  1.2200000000000002E+000 -2.9999999999999997E-004  0.0000000000000000E+000
+       H  8.6540000000000006E-001  1.1477999999999999E+000  0.0000000000000000E+000
+     &END COORD
+     &KIND "N"
+       BASIS_SET "DZVP-GTH"
+       POTENTIAL "GTH-PADE-q5"
+       &POTENTIAL
+         2 3
+           2.8917923000000001E-001 2 -1.2234819880000000E+001  1.7664072799999999E+000
+         2
+           2.5660486999999998E-001 1  1.3552242720000001E+001
+           2.7013368999999998E-001 0
+         # Potential name: GTH-PADE-Q5 for element symbol: N
+         # Potential read from the potential filename: GTH_POTENTIALS
+       &END POTENTIAL
+     &END KIND
+     &KIND "C"
+       BASIS_SET "DZVP-GTH"
+       POTENTIAL "GTH-PADE-q4"
+       &POTENTIAL
+         2 2
+           3.4883045000000001E-001 2 -8.5137710999999996E+000  1.2284320300000000E+000
+         2
+           3.0455321000000002E-001 1  9.5228417899999993E+000
+           2.3267730000000000E-001 0
+         # Potential name: GTH-PADE-Q4 for element symbol: C
+         # Potential read from the potential filename: GTH_POTENTIALS
+       &END POTENTIAL
+     &END KIND
+     &KIND "H"
+       BASIS_SET "DZVP-GTH"
+       POTENTIAL "GTH-PADE-q1"
+       &POTENTIAL
+         1
+           2.0000000000000001E-001 2 -4.1802368000000003E+000  7.2507482000000001E-001
+         0
+         # Potential name: GTH-PADE-Q1 for element symbol: H
+         # Potential read from the potential filename: GTH_POTENTIALS
+       &END POTENTIAL
+     &END KIND
+     &TOPOLOGY
+       NUMBER_OF_ATOMS 3
+       MULTIPLE_UNIT_CELL 1 1 1
+     &END TOPOLOGY
+   &END SUBSYS
+ &END FORCE_EVAL

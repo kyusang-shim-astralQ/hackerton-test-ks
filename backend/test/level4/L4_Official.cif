@@ -1,0 +1,21 @@
+data_L4_Official
+_cell_length_a 3.56683
+_cell_length_b 3.56683
+_cell_length_c 3.56683
+_cell_angle_alpha 90
+_cell_angle_beta 90
+_cell_angle_gamma 90
+loop_
+_atom_site_label
+_atom_site_type_symbol
+_atom_site_fract_x
+_atom_site_fract_y
+_atom_site_fract_z
+C2 C 0.000000 0.000000 0.000000
+C3 C 0.140180 0.140180 0.000000
+C4 C 0.140180 0.000000 0.140180
+C5 C 0.000000 0.140180 0.140180
+C6 C 0.070090 0.070090 0.070090
+C7 C 0.070090 0.210271 0.210271
+C8 C 0.210271 0.070090 0.210271
+C9 C 0.210271 0.210271 0.070090

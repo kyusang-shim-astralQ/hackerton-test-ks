@@ -1,0 +1,15 @@
+data_L6_Official
+_cell_length_a 4.0
+_cell_length_b 4.0
+_cell_length_c 4.0
+_cell_angle_alpha 90
+_cell_angle_beta 90
+_cell_angle_gamma 90
+loop_
+_atom_site_label
+_atom_site_type_symbol
+_atom_site_fract_x
+_atom_site_fract_y
+_atom_site_fract_z
+H1 H 0.000575 -0.098130 0.123941
+H2 H 0.000618 0.100375 0.124215

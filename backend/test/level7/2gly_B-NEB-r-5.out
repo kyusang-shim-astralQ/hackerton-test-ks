@@ -1,0 +1,1326 @@
+
+  **** **** ******  **  PROGRAM STARTED AT               2026-04-22 11:54:30.548
+ ***** ** ***  *** **   PROGRAM STARTED ON                                  n164
+ **    ****   ******    PROGRAM STARTED BY                                 lab07
+ ***** **    ** ** **   PROGRAM PROCESS ID                                  9592
+  **** **  *******  **  PROGRAM STARTED IN /DATA/lab07/hglee/cp2k_agent/test/lev
+                                           el7
+
+ CP2K| version string:                                       CP2K version 2026.1
+ CP2K| source code revision number:                                  git:5e54ba2
+ CP2K| cp2kflags: omp libint fftw3 libxc elpa parallel scalapack cosma xsmm spgl
+ CP2K|            ib mkl sirius libvori libbqb libvdwxc hdf5
+ CP2K| is freely available from                            https://www.cp2k.org/
+ CP2K| Program compiled at                                   2026-03-01 16:41:12
+ CP2K| Program compiled on                                                master
+ CP2K| Program compiled for                                               x86_64
+ CP2K| Data directory path                           /share/cp2k-2026.1_mkl/data
+ CP2K| Input file name                                        2gly_B-NEB-r-5.inp
+
+ GLOBAL| Force Environment number                                              1
+ GLOBAL| Basis set file name                                           BASIS_SET
+ GLOBAL| Potential file name                                           POTENTIAL
+ GLOBAL| MM Potential file name                                     MM_POTENTIAL
+ GLOBAL| Coordinate file name                                    ./amber/mol.pdb
+ GLOBAL| Method name                                                        CP2K
+ GLOBAL| Project name                                             2gly_B-NEB-r-5
+ GLOBAL| Run type                                                           BAND
+ GLOBAL| FFT library                                                       FFTW3
+ GLOBAL| Diagonalization library                                            ELPA
+ GLOBAL| Cholesky decomposition library                                ScaLAPACK
+ GLOBAL| DGEMM library                                                      BLAS
+ GLOBAL| Minimum number of eigenvectors for ELPA usage                        16
+ GLOBAL| Orthonormality check for eigenvectors                          DISABLED
+ GLOBAL| Matrix multiplication library                                     COSMA
+ GLOBAL| All-to-all communication in single precision                          F
+ GLOBAL| FFTs using library dependent lengths                                  F
+ GLOBAL| Grid backend                                                       AUTO
+ GLOBAL| Global print level                                                  LOW
+ GLOBAL| MPI I/O enabled                                                       T
+ GLOBAL| Total number of message passing processes                             1
+ GLOBAL| Number of distributed systems (nodes)                                 1
+ GLOBAL| Number of threads for this process                                    1
+ GLOBAL| This output is from process                                           0
+ GLOBAL| OpenMP stack size per thread (OMP_STACKSIZE)                    default
+ GLOBAL| CPU model name                     13th Gen Intel(R) Core(TM) i7-13700K
+ GLOBAL| CPUID                                                              1002
+
+ MEMORY| system memory details [Kb]
+ MEMORY|                        rank 0           min           max       average
+ MEMORY| MemTotal             65607484      65607484      65607484      65607484
+ MEMORY| MemFree              61045580      61045580      61045580      61045580
+ MEMORY| Buffers                117980        117980        117980        117980
+ MEMORY| Cached                1875536       1875536       1875536       1875536
+ MEMORY| Slab                   325176        325176        325176        325176
+ MEMORY| SReclaimable            89560         89560         89560         89560
+ MEMORY| MemLikelyFree        63128656      63128656      63128656      63128656
+
+
+
+                      ************* ******** ***********   
+                     ************* **********************  
+                     ****     **** ****      ***********   
+                     ******** ****  *******     ****       
+                     *******  ****   *******   ****        
+                     ****     ****       ****  ****        
+                     ****     **** **********  ****        
+                      ****     **** ********    ****       
+                     FRONTIERS IN SIMULATION TECHNOLOGY    
+                                                           
+                        C.J. Mundy, S. Balasubramanian,    
+                     Ken Bagchi, J. Hutter, Ari Seitsonen  
+                      IFW Kuo, T. Laino, J. VandeVondele   
+                                 Version 1.0               
+
+                                                           
+
+
+ EWALD| Summation is done by:                                              EWALD
+ EWALD| Alpha parameter [       ANGSTROM^-1]                              0.3600
+ EWALD| Real Space Cutoff [          ANGSTROM]                            9.3720
+ EWALD| G-space max. Miller index                         29        29        29
+     CHM BOND            1 CT1 HP    340.00000000000000        1.0900000000000001     
+     CHM BOND            2 N3 H11    434.00000000000000        1.0100000000000000     
+     CHM BOND            3 CT2 H12    340.00000000000000        1.0900000000000001     
+     CHM BOND            4 N H2    434.00000000000000        1.0100000000000000     
+     CHM BOND            5 C1 O    570.00000000000000        1.2290000000000001     
+     CHM BOND            6 C1 N    490.00000000000000        1.3350000000000000     
+     CHM BOND            7 CT1 C1    317.00000000000000        1.5220000000000000     
+     CHM BOND            8 N3 CT1    367.00000000000000        1.4710000000000001     
+     CHM BOND            9 C2 O2    656.00000000000000        1.2500000000000000     
+     CHM BOND           10 CT2 C2    317.00000000000000        1.5220000000000000     
+     CHM BOND           11 N CT2    337.00000000000000        1.4490000000000001     
+     CHM BEND            1 C1 N H2    50.000000000000000        120.00005142900000     
+     CHM BEND            2 HP CT1 C1    50.000000000000000        109.50004692900001     
+     CHM BEND            3 HP CT1 HP    35.000000000000000        109.50004692900001     
+     CHM BEND            4 H11 N3 CT1    50.000000000000000        109.50004692900001     
+     CHM BEND            5 H11 N3 H11    35.000000000000000        109.50004692900001     
+     CHM BEND            6 N3 CT1 HP    50.000000000000000        109.50004692900001     
+     CHM BEND            7 H12 CT2 C2    50.000000000000000        109.50004692900001     
+     CHM BEND            8 H12 CT2 H12    35.000000000000000        109.50004692900001     
+     CHM BEND            9 H2 N CT2    50.000000000000000        118.04005047400000     
+     CHM BEND           10 N CT2 H12    50.000000000000000        109.50004692900001     
+     CHM BEND           11 O C1 N    80.000000000000000        122.90005267200000     
+     CHM BEND           12 C1 N CT2    50.000000000000000        121.90005224300000     
+     CHM BEND           13 CT1 C1 O    80.000000000000000        120.40005160100000     
+     CHM BEND           14 CT1 C1 N    70.000000000000000        116.60004997199999     
+     CHM BEND           15 N3 CT1 C1    80.000000000000000        111.20004765800000     
+     CHM BEND           16 O2 C2 O2    80.000000000000000        126.00005400100000     
+     CHM BEND           17 CT2 C2 O2    70.000000000000000        117.00005014300000     
+     CHM BEND           18 N CT2 C2    63.000000000000000        110.10004718600000     
+     CHM TORSION            1 O C1 N H2    2.0000000000000000                1   0.0000000000000000     
+     CHM TORSION            2 O C1 N H2    2.5000000000000000                2   180.00007714399999     
+     CHM TORSION            3 C1 N CT2 H12    0.0000000000000000                2   0.0000000000000000     
+     CHM TORSION            4 HP CT1 C1 O    0.0000000000000000                2   0.0000000000000000     
+     CHM TORSION            5 HP CT1 C1 N    0.0000000000000000                2   0.0000000000000000     
+     CHM TORSION            6 CT1 C1 N H2    2.5000000000000000                2   180.00007714399999     
+     CHM TORSION            7 H11 N3 CT1 HP   0.15555555600000001                3   0.0000000000000000     
+     CHM TORSION            8 H11 N3 CT1 C1   0.15555555600000001                3   0.0000000000000000     
+     CHM TORSION            9 H12 CT2 C2 O2    0.0000000000000000                2   0.0000000000000000     
+     CHM TORSION           10 H2 N CT2 H12    0.0000000000000000                2   0.0000000000000000     
+     CHM TORSION           11 H2 N CT2 C2    0.0000000000000000                2   0.0000000000000000     
+     CHM TORSION           12 O C1 N CT2    2.5000000000000000                2   180.00007714399999     
+     CHM TORSION           13 C1 N CT2 C2   0.80000000000000004                1   0.0000000000000000     
+     CHM TORSION           14 C1 N CT2 C2   0.84999999999999998                2   180.00007714399999     
+     CHM TORSION           15 CT1 C1 N CT2    2.5000000000000000                2   180.00007714399999     
+     CHM TORSION           16 N3 CT1 C1 O    0.0000000000000000                2   0.0000000000000000     
+     CHM TORSION           17 N3 CT1 C1 N    0.0000000000000000                2   0.0000000000000000     
+     CHM TORSION           18 N CT2 C2 O2    0.0000000000000000                2   0.0000000000000000     
+     CHM TORSION           19 C1 CT2 N H2    1.1000000000000001                2   180.00007714399999     
+     CHM TORSION           20 CT1 N C1 O    10.500000000000000                2   180.00007714399999     
+     CHM TORSION           21 CT2 O2 C2 O2    10.500000000000000                2   180.00007714399999     
+     CHM NONBOND            1 N3   0.17000000000000001        1.8240000000000001     
+     CHM NONBOND            2 H11    1.5699999999999999E-002  0.59999999999999998     
+     CHM NONBOND            3 CT1   0.10940000000000000        1.9079999999999999     
+     CHM NONBOND            4 HP    1.5699999999999999E-002   1.0999999990000000     
+     CHM NONBOND            5 C1    8.5999999999999993E-002   1.9079999999999999     
+     CHM NONBOND            6 O   0.20999999999999999        1.6612000000000000     
+     CHM NONBOND            7 N   0.17000000000000001        1.8240000000000001     
+     CHM NONBOND            8 H2    1.5699999999999999E-002  0.59999999999999998     
+     CHM NONBOND            9 CT2   0.10940000000000000        1.9079999999999999     
+     CHM NONBOND           10 H12    1.5699999999999999E-002   1.3869999989999999     
+     CHM NONBOND           11 C2    8.5999999999999993E-002   1.9079999999999999     
+     CHM NONBOND           12 O2   0.20999999999999999        1.6612000000000000     
+
+ FORCEFIELD| Checking for unique bond terms
+
+ FORCEFIELD| Checking for unique bend terms
+
+ FORCEFIELD| Checking for unique Urey-Bradley terms
+
+ FORCEFIELD| Checking for unique torsion terms
+
+ FORCEFIELD| Checking for unique improper terms
+
+ FORCEFIELD| Checking for unique out-of-plane bend terms
+
+ FORCEFIELD| Checking for bond terms
+
+ FORCEFIELD| Checking for bend terms
+
+ FORCEFIELD| Checking for Urey-Bradley (UB) terms
+
+ FORCEFIELD| Checking for torsion terms
+ FORCEFIELD| Found torsion term for the atomic kinds HP, CT1, C1 and O
+ FORCEFIELD| Found torsion term for the atomic kinds H11, N3, CT1 and HP
+ FORCEFIELD| Found torsion term for the atomic kinds H11, N3, CT1 and C1
+ FORCEFIELD| Found torsion term for the atomic kinds N3, CT1, C1 and O
+ FORCEFIELD| Found multiple (     2) torsion terms for the atomic kinds O, C1, N and H2
+ FORCEFIELD| Found torsion term for the atomic kinds C1, N, CT2 and H12
+ FORCEFIELD| Found torsion term for the atomic kinds HP, CT1, C1 and N
+ FORCEFIELD| Found torsion term for the atomic kinds CT1, C1, N and H2
+ FORCEFIELD| Found torsion term for the atomic kinds C1, CT2, N and H2
+ FORCEFIELD| Found torsion term for the atomic kinds O, C1, N and CT2
+ FORCEFIELD| Found multiple (     2) torsion terms for the atomic kinds C1, N, CT2 and C2
+ FORCEFIELD| Found torsion term for the atomic kinds CT1, C1, N and CT2
+ FORCEFIELD| Found torsion term for the atomic kinds N3, CT1, C1 and N
+ FORCEFIELD| Found torsion term for the atomic kinds CT1, N, C1 and O
+ FORCEFIELD| Found torsion term for the atomic kinds H12, CT2, C2 and O2
+ FORCEFIELD| Found torsion term for the atomic kinds H2, N, CT2 and H12
+ FORCEFIELD| Found torsion term for the atomic kinds H2, N, CT2 and C2
+ FORCEFIELD| Found torsion term for the atomic kinds N, CT2, C2 and O2
+ FORCEFIELD| Found torsion term for the atomic kinds CT2, O2, C2 and O2
+
+ FORCEFIELD| Checking for improper terms
+
+ FORCEFIELD| Checking for out-of-plane bend terms
+
+ FORCEFIELD| WARNING: A non Critical ForceField parameter is missing! CP2K GOES!
+ FORCEFIELD| Non critical parameters are:Urey-Bradley,Torsions,Impropers, Opbends and 1-4
+ FORCEFIELD| All missing parameters will not contribute to the potential energy!
+
+ FORCEFIELD| Missing Urey-Bradley      (       HP,      CT1,       C1)          
+ FORCEFIELD| Missing Urey-Bradley      (       HP,      CT1,       HP)          
+ FORCEFIELD| Missing Urey-Bradley      (      H11,       N3,      CT1)          
+ FORCEFIELD| Missing Urey-Bradley      (      H11,       N3,      H11)          
+ FORCEFIELD| Missing Urey-Bradley      (       N3,      CT1,       HP)          
+ FORCEFIELD| Missing Urey-Bradley      (      CT1,       C1,        O)          
+ FORCEFIELD| Missing Urey-Bradley      (       N3,      CT1,       C1)          
+ FORCEFIELD| Missing Urey-Bradley      (       C1,        N,       H2)          
+ FORCEFIELD| Missing Urey-Bradley      (        O,       C1,        N)          
+ FORCEFIELD| Missing Urey-Bradley      (       C1,        N,      CT2)          
+ FORCEFIELD| Missing Urey-Bradley      (      CT1,       C1,        N)          
+ FORCEFIELD| Missing Urey-Bradley      (      H12,      CT2,       C2)          
+ FORCEFIELD| Missing Urey-Bradley      (      H12,      CT2,      H12)          
+ FORCEFIELD| Missing Urey-Bradley      (       H2,        N,      CT2)          
+ FORCEFIELD| Missing Urey-Bradley      (        N,      CT2,      H12)          
+ FORCEFIELD| Missing Urey-Bradley      (       O2,       C2,       O2)          
+ FORCEFIELD| Missing Urey-Bradley      (      CT2,       C2,       O2)          
+ FORCEFIELD| Missing Urey-Bradley      (        N,      CT2,       C2)          
+
+ FORCEFIELD| Total charge of the classical system:                  0.0000000000
+
+
+
+
+
+
+
+
+
+
+
+
+
+ FORCEFIELD| Checking for polarisable forcefield terms
+
+
+
+
+
+
+
+
+
+
+
+
+
+ FORCEFIELD| Checking for damping terms
+
+ FORCEFIELD| Checking for core-shell terms
+
+ FORCEFIELD| Total number of particles with a shell:                           0
+
+ FORCEFIELD| Checking for nonbonded14 terms
+
+ FORCEFIELD| Splining nonbonded terms
+
+ SPLINE_INFO| Generating 78 splines for NONBONDED14 interactions 
+              Due to 12 different atomic kinds
+
+ SPLINE_INFO| Spline number:                                1
+ SPLINE_INFO| Unique spline number:                         4
+ SPLINE_INFO| Atomic kind numbers:                          4 4
+ SPLINE_INFO| Atomic kind names:                            HP HP
+ SPLINE_INFO| Number of spline points:                      2936
+ SPLINE_INFO| Requested accuracy [Hartree]:                 1.000000E-06
+ SPLINE_INFO| Achieved accuracy [Hartree]:                  4.923500E-07
+ SPLINE_INFO| Spline range [bohr]:                          2.495432E-01 3.779452E+01
+ SPLINE_INFO| Spline range used to achieve accuracy [bohr]: 1.024431E+00 3.779452E+01
+ SPLINE_INFO| Spline value at RMIN [Hartree]:               6.281006533E+09
+ SPLINE_INFO| Spline value at RMAX [Hartree]:               0.000000000E+00
+ SPLINE_INFO| Non-bonded energy cutoff [Hartree]:          -8.864721346E-11
+
+ SPLINE_INFO| Spline number:                                2
+ SPLINE_INFO| Unique spline number:                         14
+ SPLINE_INFO| Atomic kind numbers:                          7 4
+ SPLINE_INFO| Atomic kind names:                            N HP
+ SPLINE_INFO| Number of spline points:                      2446
+ SPLINE_INFO| Requested accuracy [Hartree]:                 1.000000E-06
+ SPLINE_INFO| Achieved accuracy [Hartree]:                  9.900945E-07
+ SPLINE_INFO| Spline range [bohr]:                          3.667059E-01 3.779452E+01
+ SPLINE_INFO| Spline range used to achieve accuracy [bohr]: 1.505055E+00 3.779452E+01
+ SPLINE_INFO| Spline value at RMIN [Hartree]:               6.907021642E+09
+ SPLINE_INFO| Spline value at RMAX [Hartree]:               0.000000000E+00
+ SPLINE_INFO| Non-bonded energy cutoff [Hartree]:          -1.607926206E-09
+
+ SPLINE_INFO| Spline number:                                3
+ SPLINE_INFO| Unique spline number:                         26
+ SPLINE_INFO| Atomic kind numbers:                          7 7
+ SPLINE_INFO| Atomic kind names:                            N N
+ SPLINE_INFO| Number of spline points:                      2446
+ SPLINE_INFO| Requested accuracy [Hartree]:                 1.000000E-06
+ SPLINE_INFO| Achieved accuracy [Hartree]:                  9.315281E-07
+ SPLINE_INFO| Spline range [bohr]:                          5.103247E-01 3.779452E+01
+ SPLINE_INFO| Spline range used to achieve accuracy [bohr]: 2.074121E+00 3.779452E+01
+ SPLINE_INFO| Spline value at RMIN [Hartree]:               7.027345242E+09
+ SPLINE_INFO| Spline value at RMAX [Hartree]:               0.000000000E+00
+ SPLINE_INFO| Non-bonded energy cutoff [Hartree]:          -1.995260665E-08
+
+ SPLINE_INFO| Spline number:                                4
+ SPLINE_INFO| Unique spline number:                         2
+ SPLINE_INFO| Atomic kind numbers:                          8 4
+ SPLINE_INFO| Atomic kind names:                            H2 HP
+ SPLINE_INFO| Number of spline points:                      2446
+ SPLINE_INFO| Requested accuracy [Hartree]:                 1.000000E-06
+ SPLINE_INFO| Achieved accuracy [Hartree]:                  9.948968E-07
+ SPLINE_INFO| Spline range [bohr]:                          1.928516E-01 3.779452E+01
+ SPLINE_INFO| Spline range used to achieve accuracy [bohr]: 7.923386E-01 3.779452E+01
+ SPLINE_INFO| Spline value at RMIN [Hartree]:               4.552329894E+09
+ SPLINE_INFO| Spline value at RMAX [Hartree]:               0.000000000E+00
+ SPLINE_INFO| Non-bonded energy cutoff [Hartree]:          -1.887221326E-11
+
+ SPLINE_INFO| Spline number:                                5
+ SPLINE_INFO| Unique spline number:                         13
+ SPLINE_INFO| Atomic kind numbers:                          8 7
+ SPLINE_INFO| Atomic kind names:                            H2 N
+ SPLINE_INFO| Number of spline points:                      2446
+ SPLINE_INFO| Requested accuracy [Hartree]:                 1.000000E-06
+ SPLINE_INFO| Achieved accuracy [Hartree]:                  9.337462E-07
+ SPLINE_INFO| Spline range [bohr]:                          3.062348E-01 3.779452E+01
+ SPLINE_INFO| Spline range used to achieve accuracy [bohr]: 1.247197E+00 3.779452E+01
+ SPLINE_INFO| Spline value at RMIN [Hartree]:               5.750024925E+09
+ SPLINE_INFO| Spline value at RMAX [Hartree]:               0.000000000E+00
+ SPLINE_INFO| Non-bonded energy cutoff [Hartree]:          -5.219140999E-10
+
+ SPLINE_INFO| Spline number:                                6
+ SPLINE_INFO| Unique spline number:                         1
+ SPLINE_INFO| Atomic kind numbers:                          8 8
+ SPLINE_INFO| Atomic kind names:                            H2 H2
+ SPLINE_INFO| Number of spline points:                      2936
+ SPLINE_INFO| Requested accuracy [Hartree]:                 1.000000E-06
+ SPLINE_INFO| Achieved accuracy [Hartree]:                  3.908249E-07
+ SPLINE_INFO| Spline range [bohr]:                          1.361599E-01 3.779452E+01
+ SPLINE_INFO| Spline range used to achieve accuracy [bohr]: 5.594029E-01 3.779452E+01
+ SPLINE_INFO| Spline value at RMIN [Hartree]:               3.869332484E+09
+ SPLINE_INFO| Spline value at RMAX [Hartree]:               0.000000000E+00
+ SPLINE_INFO| Non-bonded energy cutoff [Hartree]:          -2.334623522E-12
+
+ SPLINE_INFO| Spline number:                                7
+ SPLINE_INFO| Unique spline number:                         11
+ SPLINE_INFO| Atomic kind numbers:                          9 4
+ SPLINE_INFO| Atomic kind names:                            CT2 HP
+ SPLINE_INFO| Number of spline points:                      2446
+ SPLINE_INFO| Requested accuracy [Hartree]:                 1.000000E-06
+ SPLINE_INFO| Achieved accuracy [Hartree]:                  9.807815E-07
+ SPLINE_INFO| Spline range [bohr]:                          3.704853E-01 3.779452E+01
+ SPLINE_INFO| Spline range used to achieve accuracy [bohr]: 1.520959E+00 3.779452E+01
+ SPLINE_INFO| Spline value at RMIN [Hartree]:               6.916605607E+09
+ SPLINE_INFO| Spline value at RMAX [Hartree]:               0.000000000E+00
+ SPLINE_INFO| Non-bonded energy cutoff [Hartree]:          -1.528807142E-09
+
+ SPLINE_INFO| Spline number:                                8
+ SPLINE_INFO| Unique spline number:                         24
+ SPLINE_INFO| Atomic kind numbers:                          9 7
+ SPLINE_INFO| Atomic kind names:                            CT2 N
+ SPLINE_INFO| Number of spline points:                      2446
+ SPLINE_INFO| Requested accuracy [Hartree]:                 1.000000E-06
+ SPLINE_INFO| Achieved accuracy [Hartree]:                  9.820234E-07
+ SPLINE_INFO| Spline range [bohr]:                          5.103247E-01 3.779452E+01
+ SPLINE_INFO| Spline range used to achieve accuracy [bohr]: 2.083266E+00 3.779452E+01
+ SPLINE_INFO| Spline value at RMIN [Hartree]:               7.408276400E+09
+ SPLINE_INFO| Spline value at RMAX [Hartree]:               0.000000000E+00
+ SPLINE_INFO| Non-bonded energy cutoff [Hartree]:          -1.834862409E-08
+
+ SPLINE_INFO| Spline number:                                9
+ SPLINE_INFO| Unique spline number:                         10
+ SPLINE_INFO| Atomic kind numbers:                          9 8
+ SPLINE_INFO| Atomic kind names:                            CT2 H2
+ SPLINE_INFO| Number of spline points:                      2936
+ SPLINE_INFO| Requested accuracy [Hartree]:                 1.000000E-06
+ SPLINE_INFO| Achieved accuracy [Hartree]:                  4.792675E-07
+ SPLINE_INFO| Spline range [bohr]:                          3.100143E-01 3.779452E+01
+ SPLINE_INFO| Spline range used to achieve accuracy [bohr]: 1.267489E+00 3.779452E+01
+ SPLINE_INFO| Spline value at RMIN [Hartree]:               6.633183206E+09
+ SPLINE_INFO| Spline value at RMAX [Hartree]:               0.000000000E+00
+ SPLINE_INFO| Non-bonded energy cutoff [Hartree]:          -5.136325925E-10
+
+ SPLINE_INFO| Spline number:                                10
+ SPLINE_INFO| Unique spline number:                         21
+ SPLINE_INFO| Atomic kind numbers:                          9 9
+ SPLINE_INFO| Atomic kind names:                            CT2 CT2
+ SPLINE_INFO| Number of spline points:                      2446
+ SPLINE_INFO| Requested accuracy [Hartree]:                 1.000000E-06
+ SPLINE_INFO| Achieved accuracy [Hartree]:                  9.237044E-07
+ SPLINE_INFO| Spline range [bohr]:                          5.141041E-01 3.779452E+01
+ SPLINE_INFO| Spline range used to achieve accuracy [bohr]: 2.089934E+00 3.779452E+01
+ SPLINE_INFO| Spline value at RMIN [Hartree]:               7.123182147E+09
+ SPLINE_INFO| Spline value at RMAX [Hartree]:               0.000000000E+00
+ SPLINE_INFO| Non-bonded energy cutoff [Hartree]:          -1.682235446E-08
+
+ SPLINE_INFO| Spline number:                                11
+ SPLINE_INFO| Unique spline number:                         5
+ SPLINE_INFO| Atomic kind numbers:                          10 4
+ SPLINE_INFO| Atomic kind names:                            H12 HP
+ SPLINE_INFO| Number of spline points:                      2446
+ SPLINE_INFO| Requested accuracy [Hartree]:                 1.000000E-06
+ SPLINE_INFO| Achieved accuracy [Hartree]:                  9.327184E-07
+ SPLINE_INFO| Spline range [bohr]:                          2.835582E-01 3.779452E+01
+ SPLINE_INFO| Spline range used to achieve accuracy [bohr]: 1.160685E+00 3.779452E+01
+ SPLINE_INFO| Spline value at RMIN [Hartree]:               5.715858379E+09
+ SPLINE_INFO| Spline value at RMAX [Hartree]:               0.000000000E+00
+ SPLINE_INFO| Non-bonded energy cutoff [Hartree]:          -1.850049282E-10
+
+ SPLINE_INFO| Spline number:                                12
+ SPLINE_INFO| Unique spline number:                         15
+ SPLINE_INFO| Atomic kind numbers:                          10 7
+ SPLINE_INFO| Atomic kind names:                            H12 N
+ SPLINE_INFO| Number of spline points:                      2446
+ SPLINE_INFO| Requested accuracy [Hartree]:                 1.000000E-06
+ SPLINE_INFO| Achieved accuracy [Hartree]:                  9.670480E-07
+ SPLINE_INFO| Spline range [bohr]:                          4.045003E-01 3.779452E+01
+ SPLINE_INFO| Spline range used to achieve accuracy [bohr]: 1.651751E+00 3.779452E+01
+ SPLINE_INFO| Spline value at RMIN [Hartree]:               6.851091654E+09
+ SPLINE_INFO| Spline value at RMAX [Hartree]:               0.000000000E+00
+ SPLINE_INFO| Non-bonded energy cutoff [Hartree]:          -2.819954745E-09
+
+ SPLINE_INFO| Spline number:                                13
+ SPLINE_INFO| Unique spline number:                         3
+ SPLINE_INFO| Atomic kind numbers:                          10 8
+ SPLINE_INFO| Atomic kind names:                            H12 H2
+ SPLINE_INFO| Number of spline points:                      2446
+ SPLINE_INFO| Requested accuracy [Hartree]:                 1.000000E-06
+ SPLINE_INFO| Achieved accuracy [Hartree]:                  9.538986E-07
+ SPLINE_INFO| Spline range [bohr]:                          2.268665E-01 3.779452E+01
+ SPLINE_INFO| Spline range used to achieve accuracy [bohr]: 9.271711E-01 3.779452E+01
+ SPLINE_INFO| Spline value at RMIN [Hartree]:               4.818813318E+09
+ SPLINE_INFO| Spline value at RMAX [Hartree]:               0.000000000E+00
+ SPLINE_INFO| Non-bonded energy cutoff [Hartree]:          -4.811897672E-11
+
+ SPLINE_INFO| Spline number:                                14
+ SPLINE_INFO| Unique spline number:                         12
+ SPLINE_INFO| Atomic kind numbers:                          10 9
+ SPLINE_INFO| Atomic kind names:                            H12 CT2
+ SPLINE_INFO| Number of spline points:                      2446
+ SPLINE_INFO| Requested accuracy [Hartree]:                 1.000000E-06
+ SPLINE_INFO| Achieved accuracy [Hartree]:                  8.261586E-07
+ SPLINE_INFO| Spline range [bohr]:                          4.082798E-01 3.779452E+01
+ SPLINE_INFO| Spline range used to achieve accuracy [bohr]: 1.664575E+00 3.779452E+01
+ SPLINE_INFO| Spline value at RMIN [Hartree]:               6.728726659E+09
+ SPLINE_INFO| Spline value at RMAX [Hartree]:               0.000000000E+00
+ SPLINE_INFO| Non-bonded energy cutoff [Hartree]:          -2.641291879E-09
+
+ SPLINE_INFO| Spline number:                                15
+ SPLINE_INFO| Unique spline number:                         6
+ SPLINE_INFO| Atomic kind numbers:                          10 10
+ SPLINE_INFO| Atomic kind names:                            H12 H12
+ SPLINE_INFO| Number of spline points:                      2446
+ SPLINE_INFO| Requested accuracy [Hartree]:                 1.000000E-06
+ SPLINE_INFO| Achieved accuracy [Hartree]:                  9.326103E-07
+ SPLINE_INFO| Spline range [bohr]:                          3.175732E-01 3.779452E+01
+ SPLINE_INFO| Spline range used to achieve accuracy [bohr]: 1.291955E+00 3.779452E+01
+ SPLINE_INFO| Spline value at RMIN [Hartree]:               5.817760806E+09
+ SPLINE_INFO| Spline value at RMAX [Hartree]:               0.000000000E+00
+ SPLINE_INFO| Non-bonded energy cutoff [Hartree]:          -3.562596059E-10
+
+ SPLINE_INFO| Spline number:                                16
+ SPLINE_INFO| Unique spline number:                         8
+ SPLINE_INFO| Atomic kind numbers:                          11 4
+ SPLINE_INFO| Atomic kind names:                            C2 HP
+ SPLINE_INFO| Number of spline points:                      2446
+ SPLINE_INFO| Requested accuracy [Hartree]:                 1.000000E-06
+ SPLINE_INFO| Achieved accuracy [Hartree]:                  9.892520E-07
+ SPLINE_INFO| Spline range [bohr]:                          3.667059E-01 3.779452E+01
+ SPLINE_INFO| Spline range used to achieve accuracy [bohr]: 1.505055E+00 3.779452E+01
+ SPLINE_INFO| Spline value at RMIN [Hartree]:               6.901145123E+09
+ SPLINE_INFO| Spline value at RMAX [Hartree]:               0.000000000E+00
+ SPLINE_INFO| Non-bonded energy cutoff [Hartree]:          -1.355480479E-09
+
+ SPLINE_INFO| Spline number:                                17
+ SPLINE_INFO| Unique spline number:                         22
+ SPLINE_INFO| Atomic kind numbers:                          11 7
+ SPLINE_INFO| Atomic kind names:                            C2 N
+ SPLINE_INFO| Number of spline points:                      2446
+ SPLINE_INFO| Requested accuracy [Hartree]:                 1.000000E-06
+ SPLINE_INFO| Achieved accuracy [Hartree]:                  9.267025E-07
+ SPLINE_INFO| Spline range [bohr]:                          5.065453E-01 3.779452E+01
+ SPLINE_INFO| Spline range used to achieve accuracy [bohr]: 2.061354E+00 3.779452E+01
+ SPLINE_INFO| Spline value at RMIN [Hartree]:               7.162343683E+09
+ SPLINE_INFO| Spline value at RMAX [Hartree]:               0.000000000E+00
+ SPLINE_INFO| Non-bonded energy cutoff [Hartree]:          -1.626837100E-08
+
+ SPLINE_INFO| Spline number:                                18
+ SPLINE_INFO| Unique spline number:                         7
+ SPLINE_INFO| Atomic kind numbers:                          11 8
+ SPLINE_INFO| Atomic kind names:                            C2 H2
+ SPLINE_INFO| Number of spline points:                      2446
+ SPLINE_INFO| Requested accuracy [Hartree]:                 1.000000E-06
+ SPLINE_INFO| Achieved accuracy [Hartree]:                  9.995225E-07
+ SPLINE_INFO| Spline range [bohr]:                          3.062348E-01 3.779452E+01
+ SPLINE_INFO| Spline range used to achieve accuracy [bohr]: 1.256392E+00 3.779452E+01
+ SPLINE_INFO| Spline value at RMIN [Hartree]:               6.155077299E+09
+ SPLINE_INFO| Spline value at RMAX [Hartree]:               0.000000000E+00
+ SPLINE_INFO| Non-bonded energy cutoff [Hartree]:          -4.554001178E-10
+
+ SPLINE_INFO| Spline number:                                19
+ SPLINE_INFO| Unique spline number:                         20
+ SPLINE_INFO| Atomic kind numbers:                          11 9
+ SPLINE_INFO| Atomic kind names:                            C2 CT2
+ SPLINE_INFO| Number of spline points:                      2446
+ SPLINE_INFO| Requested accuracy [Hartree]:                 1.000000E-06
+ SPLINE_INFO| Achieved accuracy [Hartree]:                  9.710134E-07
+ SPLINE_INFO| Spline range [bohr]:                          5.065453E-01 3.779452E+01
+ SPLINE_INFO| Spline range used to achieve accuracy [bohr]: 2.070500E+00 3.779452E+01
+ SPLINE_INFO| Spline value at RMIN [Hartree]:               7.504817683E+09
+ SPLINE_INFO| Spline value at RMAX [Hartree]:               0.000000000E+00
+ SPLINE_INFO| Non-bonded energy cutoff [Hartree]:          -1.491514034E-08
+
+ SPLINE_INFO| Spline number:                                20
+ SPLINE_INFO| Unique spline number:                         9
+ SPLINE_INFO| Atomic kind numbers:                          11 10
+ SPLINE_INFO| Atomic kind names:                            C2 H12
+ SPLINE_INFO| Number of spline points:                      2446
+ SPLINE_INFO| Requested accuracy [Hartree]:                 1.000000E-06
+ SPLINE_INFO| Achieved accuracy [Hartree]:                  9.376789E-07
+ SPLINE_INFO| Spline range [bohr]:                          4.045003E-01 3.779452E+01
+ SPLINE_INFO| Spline range used to achieve accuracy [bohr]: 1.648695E+00 3.779452E+01
+ SPLINE_INFO| Spline value at RMIN [Hartree]:               6.643025455E+09
+ SPLINE_INFO| Spline value at RMAX [Hartree]:               0.000000000E+00
+ SPLINE_INFO| Non-bonded energy cutoff [Hartree]:          -2.341838603E-09
+
+ SPLINE_INFO| Spline number:                                21
+ SPLINE_INFO| Unique spline number:                         19
+ SPLINE_INFO| Atomic kind numbers:                          11 11
+ SPLINE_INFO| Atomic kind names:                            C2 C2
+ SPLINE_INFO| Number of spline points:                      2446
+ SPLINE_INFO| Requested accuracy [Hartree]:                 1.000000E-06
+ SPLINE_INFO| Achieved accuracy [Hartree]:                  9.783674E-07
+ SPLINE_INFO| Spline range [bohr]:                          5.027658E-01 3.779452E+01
+ SPLINE_INFO| Spline range used to achieve accuracy [bohr]: 2.048586E+00 3.779452E+01
+ SPLINE_INFO| Spline value at RMIN [Hartree]:               7.260245973E+09
+ SPLINE_INFO| Spline value at RMAX [Hartree]:               0.000000000E+00
+ SPLINE_INFO| Non-bonded energy cutoff [Hartree]:          -1.322415433E-08
+
+ SPLINE_INFO| Spline number:                                22
+ SPLINE_INFO| Unique spline number:                         17
+ SPLINE_INFO| Atomic kind numbers:                          12 4
+ SPLINE_INFO| Atomic kind names:                            O2 HP
+ SPLINE_INFO| Number of spline points:                      2446
+ SPLINE_INFO| Requested accuracy [Hartree]:                 1.000000E-06
+ SPLINE_INFO| Achieved accuracy [Hartree]:                  9.435698E-07
+ SPLINE_INFO| Spline range [bohr]:                          3.515881E-01 3.779452E+01
+ SPLINE_INFO| Spline range used to achieve accuracy [bohr]: 1.432232E+00 3.779452E+01
+ SPLINE_INFO| Spline value at RMIN [Hartree]:               6.265758959E+09
+ SPLINE_INFO| Spline value at RMAX [Hartree]:               0.000000000E+00
+ SPLINE_INFO| Non-bonded energy cutoff [Hartree]:          -1.267286754E-09
+
+ SPLINE_INFO| Spline number:                                23
+ SPLINE_INFO| Unique spline number:                         27
+ SPLINE_INFO| Atomic kind numbers:                          12 7
+ SPLINE_INFO| Atomic kind names:                            O2 N
+ SPLINE_INFO| Number of spline points:                      2446
+ SPLINE_INFO| Requested accuracy [Hartree]:                 1.000000E-06
+ SPLINE_INFO| Achieved accuracy [Hartree]:                  9.234670E-07
+ SPLINE_INFO| Spline range [bohr]:                          4.914275E-01 3.779452E+01
+ SPLINE_INFO| Spline range used to achieve accuracy [bohr]: 1.998069E+00 3.779452E+01
+ SPLINE_INFO| Spline value at RMIN [Hartree]:               7.006652209E+09
+ SPLINE_INFO| Spline value at RMAX [Hartree]:               0.000000000E+00
+ SPLINE_INFO| Non-bonded energy cutoff [Hartree]:          -1.686257902E-08
+
+ SPLINE_INFO| Spline number:                                24
+ SPLINE_INFO| Unique spline number:                         16
+ SPLINE_INFO| Atomic kind numbers:                          12 8
+ SPLINE_INFO| Atomic kind names:                            O2 H2
+ SPLINE_INFO| Number of spline points:                      2936
+ SPLINE_INFO| Requested accuracy [Hartree]:                 1.000000E-06
+ SPLINE_INFO| Achieved accuracy [Hartree]:                  4.714370E-07
+ SPLINE_INFO| Spline range [bohr]:                          2.873376E-01 3.779452E+01
+ SPLINE_INFO| Spline range used to achieve accuracy [bohr]: 1.173857E+00 3.779452E+01
+ SPLINE_INFO| Spline value at RMIN [Hartree]:               6.352710662E+09
+ SPLINE_INFO| Spline value at RMAX [Hartree]:               0.000000000E+00
+ SPLINE_INFO| Non-bonded energy cutoff [Hartree]:          -3.822281065E-10
+
+ SPLINE_INFO| Spline number:                                25
+ SPLINE_INFO| Unique spline number:                         25
+ SPLINE_INFO| Atomic kind numbers:                          12 9
+ SPLINE_INFO| Atomic kind names:                            O2 CT2
+ SPLINE_INFO| Number of spline points:                      2446
+ SPLINE_INFO| Requested accuracy [Hartree]:                 1.000000E-06
+ SPLINE_INFO| Achieved accuracy [Hartree]:                  9.803533E-07
+ SPLINE_INFO| Spline range [bohr]:                          4.914275E-01 3.779452E+01
+ SPLINE_INFO| Spline range used to achieve accuracy [bohr]: 2.007218E+00 3.779452E+01
+ SPLINE_INFO| Spline value at RMIN [Hartree]:               7.480195224E+09
+ SPLINE_INFO| Spline value at RMAX [Hartree]:               0.000000000E+00
+ SPLINE_INFO| Non-bonded energy cutoff [Hartree]:          -1.560509216E-08
+
+ SPLINE_INFO| Spline number:                                26
+ SPLINE_INFO| Unique spline number:                         18
+ SPLINE_INFO| Atomic kind numbers:                          12 10
+ SPLINE_INFO| Atomic kind names:                            O2 H12
+ SPLINE_INFO| Number of spline points:                      2446
+ SPLINE_INFO| Requested accuracy [Hartree]:                 1.000000E-06
+ SPLINE_INFO| Achieved accuracy [Hartree]:                  9.072796E-07
+ SPLINE_INFO| Spline range [bohr]:                          3.893826E-01 3.779452E+01
+ SPLINE_INFO| Spline range used to achieve accuracy [bohr]: 1.582090E+00 3.779452E+01
+ SPLINE_INFO| Spline value at RMIN [Hartree]:               6.332161239E+09
+ SPLINE_INFO| Spline value at RMAX [Hartree]:               0.000000000E+00
+ SPLINE_INFO| Non-bonded energy cutoff [Hartree]:          -2.293756128E-09
+
+ SPLINE_INFO| Spline number:                                27
+ SPLINE_INFO| Unique spline number:                         23
+ SPLINE_INFO| Atomic kind numbers:                          12 11
+ SPLINE_INFO| Atomic kind names:                            O2 C2
+ SPLINE_INFO| Number of spline points:                      2446
+ SPLINE_INFO| Requested accuracy [Hartree]:                 1.000000E-06
+ SPLINE_INFO| Achieved accuracy [Hartree]:                  9.629178E-07
+ SPLINE_INFO| Spline range [bohr]:                          4.876481E-01 3.779452E+01
+ SPLINE_INFO| Spline range used to achieve accuracy [bohr]: 1.988342E+00 3.779452E+01
+ SPLINE_INFO| Spline value at RMIN [Hartree]:               7.255341490E+09
+ SPLINE_INFO| Spline value at RMAX [Hartree]:               0.000000000E+00
+ SPLINE_INFO| Non-bonded energy cutoff [Hartree]:          -1.383588369E-08
+
+ SPLINE_INFO| Spline number:                                28
+ SPLINE_INFO| Unique spline number:                         28
+ SPLINE_INFO| Atomic kind numbers:                          12 12
+ SPLINE_INFO| Atomic kind names:                            O2 O2
+ SPLINE_INFO| Number of spline points:                      2446
+ SPLINE_INFO| Requested accuracy [Hartree]:                 1.000000E-06
+ SPLINE_INFO| Achieved accuracy [Hartree]:                  9.686523E-07
+ SPLINE_INFO| Spline range [bohr]:                          4.725303E-01 3.779452E+01
+ SPLINE_INFO| Spline range used to achieve accuracy [bohr]: 1.921958E+00 3.779452E+01
+ SPLINE_INFO| Spline value at RMIN [Hartree]:               6.919814892E+09
+ SPLINE_INFO| Spline value at RMAX [Hartree]:               0.000000000E+00
+ SPLINE_INFO| Non-bonded energy cutoff [Hartree]:          -1.406552601E-08
+
+ SPLINE_INFO| Number of pair potential splines allocated:   28
+
+ SPLINE_INFO| Number of unique splines computed:            28
+
+ FORCEFIELD| Splining done
+
+ FORCEFIELD| Checking for nonbonded terms
+
+ FORCEFIELD| Checking for nonbonded terms between the atomic kinds N3 and N3
+
+ FORCEFIELD| Checking for nonbonded terms between the atomic kinds N3 and H11
+
+ FORCEFIELD| Checking for nonbonded terms between the atomic kinds N3 and CT1
+
+ FORCEFIELD| Checking for nonbonded terms between the atomic kinds N3 and HP
+
+ FORCEFIELD| Checking for nonbonded terms between the atomic kinds N3 and C1
+
+ FORCEFIELD| Checking for nonbonded terms between the atomic kinds N3 and O
+
+ FORCEFIELD| Checking for nonbonded terms between the atomic kinds N3 and N
+
+ FORCEFIELD| Checking for nonbonded terms between the atomic kinds N3 and H2
+
+ FORCEFIELD| Checking for nonbonded terms between the atomic kinds N3 and CT2
+
+ FORCEFIELD| Checking for nonbonded terms between the atomic kinds N3 and H12
+
+ FORCEFIELD| Checking for nonbonded terms between the atomic kinds N3 and C2
+
+ FORCEFIELD| Checking for nonbonded terms between the atomic kinds N3 and O2
+
+ FORCEFIELD| Checking for nonbonded terms between the atomic kinds H11 and H11
+
+ FORCEFIELD| Checking for nonbonded terms between the atomic kinds H11 and CT1
+
+ FORCEFIELD| Checking for nonbonded terms between the atomic kinds H11 and HP
+
+ FORCEFIELD| Checking for nonbonded terms between the atomic kinds H11 and C1
+
+ FORCEFIELD| Checking for nonbonded terms between the atomic kinds H11 and O
+
+ FORCEFIELD| Checking for nonbonded terms between the atomic kinds H11 and N
+
+ FORCEFIELD| Checking for nonbonded terms between the atomic kinds H11 and H2
+
+ FORCEFIELD| Checking for nonbonded terms between the atomic kinds H11 and CT2
+
+ FORCEFIELD| Checking for nonbonded terms between the atomic kinds H11 and H12
+
+ FORCEFIELD| Checking for nonbonded terms between the atomic kinds H11 and C2
+
+ FORCEFIELD| Checking for nonbonded terms between the atomic kinds H11 and O2
+
+ FORCEFIELD| Checking for nonbonded terms between the atomic kinds CT1 and CT1
+
+ FORCEFIELD| Checking for nonbonded terms between the atomic kinds CT1 and HP
+
+ FORCEFIELD| Checking for nonbonded terms between the atomic kinds CT1 and C1
+
+ FORCEFIELD| Checking for nonbonded terms between the atomic kinds CT1 and O
+
+ FORCEFIELD| Checking for nonbonded terms between the atomic kinds CT1 and N
+
+ FORCEFIELD| Checking for nonbonded terms between the atomic kinds CT1 and H2
+
+ FORCEFIELD| Checking for nonbonded terms between the atomic kinds CT1 and CT2
+
+ FORCEFIELD| Checking for nonbonded terms between the atomic kinds CT1 and H12
+
+ FORCEFIELD| Checking for nonbonded terms between the atomic kinds CT1 and C2
+
+ FORCEFIELD| Checking for nonbonded terms between the atomic kinds CT1 and O2
+
+ FORCEFIELD| Checking for nonbonded terms between the atomic kinds HP and HP
+
+ FORCEFIELD| Checking for nonbonded terms between the atomic kinds HP and C1
+
+ FORCEFIELD| Checking for nonbonded terms between the atomic kinds HP and O
+
+ FORCEFIELD| Checking for nonbonded terms between the atomic kinds HP and N
+
+ FORCEFIELD| Checking for nonbonded terms between the atomic kinds HP and H2
+
+ FORCEFIELD| Checking for nonbonded terms between the atomic kinds HP and CT2
+
+ FORCEFIELD| Checking for nonbonded terms between the atomic kinds HP and H12
+
+ FORCEFIELD| Checking for nonbonded terms between the atomic kinds HP and C2
+
+ FORCEFIELD| Checking for nonbonded terms between the atomic kinds HP and O2
+
+ FORCEFIELD| Checking for nonbonded terms between the atomic kinds C1 and C1
+
+ FORCEFIELD| Checking for nonbonded terms between the atomic kinds C1 and O
+
+ FORCEFIELD| Checking for nonbonded terms between the atomic kinds C1 and N
+
+ FORCEFIELD| Checking for nonbonded terms between the atomic kinds C1 and H2
+
+ FORCEFIELD| Checking for nonbonded terms between the atomic kinds C1 and CT2
+
+ FORCEFIELD| Checking for nonbonded terms between the atomic kinds C1 and H12
+
+ FORCEFIELD| Checking for nonbonded terms between the atomic kinds C1 and C2
+
+ FORCEFIELD| Checking for nonbonded terms between the atomic kinds C1 and O2
+
+ FORCEFIELD| Checking for nonbonded terms between the atomic kinds O and O
+
+ FORCEFIELD| Checking for nonbonded terms between the atomic kinds O and N
+
+ FORCEFIELD| Checking for nonbonded terms between the atomic kinds O and H2
+
+ FORCEFIELD| Checking for nonbonded terms between the atomic kinds O and CT2
+
+ FORCEFIELD| Checking for nonbonded terms between the atomic kinds O and H12
+
+ FORCEFIELD| Checking for nonbonded terms between the atomic kinds O and C2
+
+ FORCEFIELD| Checking for nonbonded terms between the atomic kinds O and O2
+
+ FORCEFIELD| Checking for nonbonded terms between the atomic kinds N and N
+
+ FORCEFIELD| Checking for nonbonded terms between the atomic kinds N and H2
+
+ FORCEFIELD| Checking for nonbonded terms between the atomic kinds N and CT2
+
+ FORCEFIELD| Checking for nonbonded terms between the atomic kinds N and H12
+
+ FORCEFIELD| Checking for nonbonded terms between the atomic kinds N and C2
+
+ FORCEFIELD| Checking for nonbonded terms between the atomic kinds N and O2
+
+ FORCEFIELD| Checking for nonbonded terms between the atomic kinds H2 and H2
+
+ FORCEFIELD| Checking for nonbonded terms between the atomic kinds H2 and CT2
+
+ FORCEFIELD| Checking for nonbonded terms between the atomic kinds H2 and H12
+
+ FORCEFIELD| Checking for nonbonded terms between the atomic kinds H2 and C2
+
+ FORCEFIELD| Checking for nonbonded terms between the atomic kinds H2 and O2
+
+ FORCEFIELD| Checking for nonbonded terms between the atomic kinds CT2 and CT2
+
+ FORCEFIELD| Checking for nonbonded terms between the atomic kinds CT2 and H12
+
+ FORCEFIELD| Checking for nonbonded terms between the atomic kinds CT2 and C2
+
+ FORCEFIELD| Checking for nonbonded terms between the atomic kinds CT2 and O2
+
+ FORCEFIELD| Checking for nonbonded terms between the atomic kinds H12 and H12
+
+ FORCEFIELD| Checking for nonbonded terms between the atomic kinds H12 and C2
+
+ FORCEFIELD| Checking for nonbonded terms between the atomic kinds H12 and O2
+
+ FORCEFIELD| Checking for nonbonded terms between the atomic kinds C2 and C2
+
+ FORCEFIELD| Checking for nonbonded terms between the atomic kinds C2 and O2
+
+ FORCEFIELD| Checking for nonbonded terms between the atomic kinds O2 and O2
+
+ FORCEFIELD| Splining nonbonded terms
+
+ SPLINE_INFO| Generating 78 splines for NONBONDED interactions 
+              Due to 12 different atomic kinds
+
+ SPLINE_INFO| Spline number:                                1
+ SPLINE_INFO| Unique spline number:                         4
+ SPLINE_INFO| Atomic kind numbers:                          4 4
+ SPLINE_INFO| Atomic kind names:                            HP HP
+ SPLINE_INFO| Number of spline points:                      2936
+ SPLINE_INFO| Requested accuracy [Hartree]:                 1.000000E-06
+ SPLINE_INFO| Achieved accuracy [Hartree]:                  4.923500E-07
+ SPLINE_INFO| Spline range [bohr]:                          2.495432E-01 3.779452E+01
+ SPLINE_INFO| Spline range used to achieve accuracy [bohr]: 1.024431E+00 3.779452E+01
+ SPLINE_INFO| Spline value at RMIN [Hartree]:               6.281006533E+09
+ SPLINE_INFO| Spline value at RMAX [Hartree]:               0.000000000E+00
+ SPLINE_INFO| Non-bonded energy cutoff [Hartree]:          -8.864721346E-11
+
+ SPLINE_INFO| Spline number:                                2
+ SPLINE_INFO| Unique spline number:                         14
+ SPLINE_INFO| Atomic kind numbers:                          7 4
+ SPLINE_INFO| Atomic kind names:                            N HP
+ SPLINE_INFO| Number of spline points:                      2446
+ SPLINE_INFO| Requested accuracy [Hartree]:                 1.000000E-06
+ SPLINE_INFO| Achieved accuracy [Hartree]:                  9.900945E-07
+ SPLINE_INFO| Spline range [bohr]:                          3.667059E-01 3.779452E+01
+ SPLINE_INFO| Spline range used to achieve accuracy [bohr]: 1.505055E+00 3.779452E+01
+ SPLINE_INFO| Spline value at RMIN [Hartree]:               6.907021642E+09
+ SPLINE_INFO| Spline value at RMAX [Hartree]:               0.000000000E+00
+ SPLINE_INFO| Non-bonded energy cutoff [Hartree]:          -1.607926206E-09
+
+ SPLINE_INFO| Spline number:                                3
+ SPLINE_INFO| Unique spline number:                         26
+ SPLINE_INFO| Atomic kind numbers:                          7 7
+ SPLINE_INFO| Atomic kind names:                            N N
+ SPLINE_INFO| Number of spline points:                      2446
+ SPLINE_INFO| Requested accuracy [Hartree]:                 1.000000E-06
+ SPLINE_INFO| Achieved accuracy [Hartree]:                  9.315281E-07
+ SPLINE_INFO| Spline range [bohr]:                          5.103247E-01 3.779452E+01
+ SPLINE_INFO| Spline range used to achieve accuracy [bohr]: 2.074121E+00 3.779452E+01
+ SPLINE_INFO| Spline value at RMIN [Hartree]:               7.027345242E+09
+ SPLINE_INFO| Spline value at RMAX [Hartree]:               0.000000000E+00
+ SPLINE_INFO| Non-bonded energy cutoff [Hartree]:          -1.995260665E-08
+
+ SPLINE_INFO| Spline number:                                4
+ SPLINE_INFO| Unique spline number:                         2
+ SPLINE_INFO| Atomic kind numbers:                          8 4
+ SPLINE_INFO| Atomic kind names:                            H2 HP
+ SPLINE_INFO| Number of spline points:                      2446
+ SPLINE_INFO| Requested accuracy [Hartree]:                 1.000000E-06
+ SPLINE_INFO| Achieved accuracy [Hartree]:                  9.948968E-07
+ SPLINE_INFO| Spline range [bohr]:                          1.928516E-01 3.779452E+01
+ SPLINE_INFO| Spline range used to achieve accuracy [bohr]: 7.923386E-01 3.779452E+01
+ SPLINE_INFO| Spline value at RMIN [Hartree]:               4.552329894E+09
+ SPLINE_INFO| Spline value at RMAX [Hartree]:               0.000000000E+00
+ SPLINE_INFO| Non-bonded energy cutoff [Hartree]:          -1.887221326E-11
+
+ SPLINE_INFO| Spline number:                                5
+ SPLINE_INFO| Unique spline number:                         13
+ SPLINE_INFO| Atomic kind numbers:                          8 7
+ SPLINE_INFO| Atomic kind names:                            H2 N
+ SPLINE_INFO| Number of spline points:                      2446
+ SPLINE_INFO| Requested accuracy [Hartree]:                 1.000000E-06
+ SPLINE_INFO| Achieved accuracy [Hartree]:                  9.337462E-07
+ SPLINE_INFO| Spline range [bohr]:                          3.062348E-01 3.779452E+01
+ SPLINE_INFO| Spline range used to achieve accuracy [bohr]: 1.247197E+00 3.779452E+01
+ SPLINE_INFO| Spline value at RMIN [Hartree]:               5.750024925E+09
+ SPLINE_INFO| Spline value at RMAX [Hartree]:               0.000000000E+00
+ SPLINE_INFO| Non-bonded energy cutoff [Hartree]:          -5.219140999E-10
+
+ SPLINE_INFO| Spline number:                                6
+ SPLINE_INFO| Unique spline number:                         1
+ SPLINE_INFO| Atomic kind numbers:                          8 8
+ SPLINE_INFO| Atomic kind names:                            H2 H2
+ SPLINE_INFO| Number of spline points:                      2936
+ SPLINE_INFO| Requested accuracy [Hartree]:                 1.000000E-06
+ SPLINE_INFO| Achieved accuracy [Hartree]:                  3.908249E-07
+ SPLINE_INFO| Spline range [bohr]:                          1.361599E-01 3.779452E+01
+ SPLINE_INFO| Spline range used to achieve accuracy [bohr]: 5.594029E-01 3.779452E+01
+ SPLINE_INFO| Spline value at RMIN [Hartree]:               3.869332484E+09
+ SPLINE_INFO| Spline value at RMAX [Hartree]:               0.000000000E+00
+ SPLINE_INFO| Non-bonded energy cutoff [Hartree]:          -2.334623522E-12
+
+ SPLINE_INFO| Spline number:                                7
+ SPLINE_INFO| Unique spline number:                         11
+ SPLINE_INFO| Atomic kind numbers:                          9 4
+ SPLINE_INFO| Atomic kind names:                            CT2 HP
+ SPLINE_INFO| Number of spline points:                      2446
+ SPLINE_INFO| Requested accuracy [Hartree]:                 1.000000E-06
+ SPLINE_INFO| Achieved accuracy [Hartree]:                  9.807815E-07
+ SPLINE_INFO| Spline range [bohr]:                          3.704853E-01 3.779452E+01
+ SPLINE_INFO| Spline range used to achieve accuracy [bohr]: 1.520959E+00 3.779452E+01
+ SPLINE_INFO| Spline value at RMIN [Hartree]:               6.916605607E+09
+ SPLINE_INFO| Spline value at RMAX [Hartree]:               0.000000000E+00
+ SPLINE_INFO| Non-bonded energy cutoff [Hartree]:          -1.528807142E-09
+
+ SPLINE_INFO| Spline number:                                8
+ SPLINE_INFO| Unique spline number:                         24
+ SPLINE_INFO| Atomic kind numbers:                          9 7
+ SPLINE_INFO| Atomic kind names:                            CT2 N
+ SPLINE_INFO| Number of spline points:                      2446
+ SPLINE_INFO| Requested accuracy [Hartree]:                 1.000000E-06
+ SPLINE_INFO| Achieved accuracy [Hartree]:                  9.820234E-07
+ SPLINE_INFO| Spline range [bohr]:                          5.103247E-01 3.779452E+01
+ SPLINE_INFO| Spline range used to achieve accuracy [bohr]: 2.083266E+00 3.779452E+01
+ SPLINE_INFO| Spline value at RMIN [Hartree]:               7.408276400E+09
+ SPLINE_INFO| Spline value at RMAX [Hartree]:               0.000000000E+00
+ SPLINE_INFO| Non-bonded energy cutoff [Hartree]:          -1.834862409E-08
+
+ SPLINE_INFO| Spline number:                                9
+ SPLINE_INFO| Unique spline number:                         10
+ SPLINE_INFO| Atomic kind numbers:                          9 8
+ SPLINE_INFO| Atomic kind names:                            CT2 H2
+ SPLINE_INFO| Number of spline points:                      2936
+ SPLINE_INFO| Requested accuracy [Hartree]:                 1.000000E-06
+ SPLINE_INFO| Achieved accuracy [Hartree]:                  4.792675E-07
+ SPLINE_INFO| Spline range [bohr]:                          3.100143E-01 3.779452E+01
+ SPLINE_INFO| Spline range used to achieve accuracy [bohr]: 1.267489E+00 3.779452E+01
+ SPLINE_INFO| Spline value at RMIN [Hartree]:               6.633183206E+09
+ SPLINE_INFO| Spline value at RMAX [Hartree]:               0.000000000E+00
+ SPLINE_INFO| Non-bonded energy cutoff [Hartree]:          -5.136325925E-10
+
+ SPLINE_INFO| Spline number:                                10
+ SPLINE_INFO| Unique spline number:                         21
+ SPLINE_INFO| Atomic kind numbers:                          9 9
+ SPLINE_INFO| Atomic kind names:                            CT2 CT2
+ SPLINE_INFO| Number of spline points:                      2446
+ SPLINE_INFO| Requested accuracy [Hartree]:                 1.000000E-06
+ SPLINE_INFO| Achieved accuracy [Hartree]:                  9.237044E-07
+ SPLINE_INFO| Spline range [bohr]:                          5.141041E-01 3.779452E+01
+ SPLINE_INFO| Spline range used to achieve accuracy [bohr]: 2.089934E+00 3.779452E+01
+ SPLINE_INFO| Spline value at RMIN [Hartree]:               7.123182147E+09
+ SPLINE_INFO| Spline value at RMAX [Hartree]:               0.000000000E+00
+ SPLINE_INFO| Non-bonded energy cutoff [Hartree]:          -1.682235446E-08
+
+ SPLINE_INFO| Spline number:                                11
+ SPLINE_INFO| Unique spline number:                         5
+ SPLINE_INFO| Atomic kind numbers:                          10 4
+ SPLINE_INFO| Atomic kind names:                            H12 HP
+ SPLINE_INFO| Number of spline points:                      2446
+ SPLINE_INFO| Requested accuracy [Hartree]:                 1.000000E-06
+ SPLINE_INFO| Achieved accuracy [Hartree]:                  9.327184E-07
+ SPLINE_INFO| Spline range [bohr]:                          2.835582E-01 3.779452E+01
+ SPLINE_INFO| Spline range used to achieve accuracy [bohr]: 1.160685E+00 3.779452E+01
+ SPLINE_INFO| Spline value at RMIN [Hartree]:               5.715858379E+09
+ SPLINE_INFO| Spline value at RMAX [Hartree]:               0.000000000E+00
+ SPLINE_INFO| Non-bonded energy cutoff [Hartree]:          -1.850049282E-10
+
+ SPLINE_INFO| Spline number:                                12
+ SPLINE_INFO| Unique spline number:                         15
+ SPLINE_INFO| Atomic kind numbers:                          10 7
+ SPLINE_INFO| Atomic kind names:                            H12 N
+ SPLINE_INFO| Number of spline points:                      2446
+ SPLINE_INFO| Requested accuracy [Hartree]:                 1.000000E-06
+ SPLINE_INFO| Achieved accuracy [Hartree]:                  9.670480E-07
+ SPLINE_INFO| Spline range [bohr]:                          4.045003E-01 3.779452E+01
+ SPLINE_INFO| Spline range used to achieve accuracy [bohr]: 1.651751E+00 3.779452E+01
+ SPLINE_INFO| Spline value at RMIN [Hartree]:               6.851091654E+09
+ SPLINE_INFO| Spline value at RMAX [Hartree]:               0.000000000E+00
+ SPLINE_INFO| Non-bonded energy cutoff [Hartree]:          -2.819954745E-09
+
+ SPLINE_INFO| Spline number:                                13
+ SPLINE_INFO| Unique spline number:                         3
+ SPLINE_INFO| Atomic kind numbers:                          10 8
+ SPLINE_INFO| Atomic kind names:                            H12 H2
+ SPLINE_INFO| Number of spline points:                      2446
+ SPLINE_INFO| Requested accuracy [Hartree]:                 1.000000E-06
+ SPLINE_INFO| Achieved accuracy [Hartree]:                  9.538986E-07
+ SPLINE_INFO| Spline range [bohr]:                          2.268665E-01 3.779452E+01
+ SPLINE_INFO| Spline range used to achieve accuracy [bohr]: 9.271711E-01 3.779452E+01
+ SPLINE_INFO| Spline value at RMIN [Hartree]:               4.818813318E+09
+ SPLINE_INFO| Spline value at RMAX [Hartree]:               0.000000000E+00
+ SPLINE_INFO| Non-bonded energy cutoff [Hartree]:          -4.811897672E-11
+
+ SPLINE_INFO| Spline number:                                14
+ SPLINE_INFO| Unique spline number:                         12
+ SPLINE_INFO| Atomic kind numbers:                          10 9
+ SPLINE_INFO| Atomic kind names:                            H12 CT2
+ SPLINE_INFO| Number of spline points:                      2446
+ SPLINE_INFO| Requested accuracy [Hartree]:                 1.000000E-06
+ SPLINE_INFO| Achieved accuracy [Hartree]:                  8.261586E-07
+ SPLINE_INFO| Spline range [bohr]:                          4.082798E-01 3.779452E+01
+ SPLINE_INFO| Spline range used to achieve accuracy [bohr]: 1.664575E+00 3.779452E+01
+ SPLINE_INFO| Spline value at RMIN [Hartree]:               6.728726659E+09
+ SPLINE_INFO| Spline value at RMAX [Hartree]:               0.000000000E+00
+ SPLINE_INFO| Non-bonded energy cutoff [Hartree]:          -2.641291879E-09
+
+ SPLINE_INFO| Spline number:                                15
+ SPLINE_INFO| Unique spline number:                         6
+ SPLINE_INFO| Atomic kind numbers:                          10 10
+ SPLINE_INFO| Atomic kind names:                            H12 H12
+ SPLINE_INFO| Number of spline points:                      2446
+ SPLINE_INFO| Requested accuracy [Hartree]:                 1.000000E-06
+ SPLINE_INFO| Achieved accuracy [Hartree]:                  9.326103E-07
+ SPLINE_INFO| Spline range [bohr]:                          3.175732E-01 3.779452E+01
+ SPLINE_INFO| Spline range used to achieve accuracy [bohr]: 1.291955E+00 3.779452E+01
+ SPLINE_INFO| Spline value at RMIN [Hartree]:               5.817760806E+09
+ SPLINE_INFO| Spline value at RMAX [Hartree]:               0.000000000E+00
+ SPLINE_INFO| Non-bonded energy cutoff [Hartree]:          -3.562596059E-10
+
+ SPLINE_INFO| Spline number:                                16
+ SPLINE_INFO| Unique spline number:                         8
+ SPLINE_INFO| Atomic kind numbers:                          11 4
+ SPLINE_INFO| Atomic kind names:                            C2 HP
+ SPLINE_INFO| Number of spline points:                      2446
+ SPLINE_INFO| Requested accuracy [Hartree]:                 1.000000E-06
+ SPLINE_INFO| Achieved accuracy [Hartree]:                  9.892520E-07
+ SPLINE_INFO| Spline range [bohr]:                          3.667059E-01 3.779452E+01
+ SPLINE_INFO| Spline range used to achieve accuracy [bohr]: 1.505055E+00 3.779452E+01
+ SPLINE_INFO| Spline value at RMIN [Hartree]:               6.901145123E+09
+ SPLINE_INFO| Spline value at RMAX [Hartree]:               0.000000000E+00
+ SPLINE_INFO| Non-bonded energy cutoff [Hartree]:          -1.355480479E-09
+
+ SPLINE_INFO| Spline number:                                17
+ SPLINE_INFO| Unique spline number:                         22
+ SPLINE_INFO| Atomic kind numbers:                          11 7
+ SPLINE_INFO| Atomic kind names:                            C2 N
+ SPLINE_INFO| Number of spline points:                      2446
+ SPLINE_INFO| Requested accuracy [Hartree]:                 1.000000E-06
+ SPLINE_INFO| Achieved accuracy [Hartree]:                  9.267025E-07
+ SPLINE_INFO| Spline range [bohr]:                          5.065453E-01 3.779452E+01
+ SPLINE_INFO| Spline range used to achieve accuracy [bohr]: 2.061354E+00 3.779452E+01
+ SPLINE_INFO| Spline value at RMIN [Hartree]:               7.162343683E+09
+ SPLINE_INFO| Spline value at RMAX [Hartree]:               0.000000000E+00
+ SPLINE_INFO| Non-bonded energy cutoff [Hartree]:          -1.626837100E-08
+
+ SPLINE_INFO| Spline number:                                18
+ SPLINE_INFO| Unique spline number:                         7
+ SPLINE_INFO| Atomic kind numbers:                          11 8
+ SPLINE_INFO| Atomic kind names:                            C2 H2
+ SPLINE_INFO| Number of spline points:                      2446
+ SPLINE_INFO| Requested accuracy [Hartree]:                 1.000000E-06
+ SPLINE_INFO| Achieved accuracy [Hartree]:                  9.995225E-07
+ SPLINE_INFO| Spline range [bohr]:                          3.062348E-01 3.779452E+01
+ SPLINE_INFO| Spline range used to achieve accuracy [bohr]: 1.256392E+00 3.779452E+01
+ SPLINE_INFO| Spline value at RMIN [Hartree]:               6.155077299E+09
+ SPLINE_INFO| Spline value at RMAX [Hartree]:               0.000000000E+00
+ SPLINE_INFO| Non-bonded energy cutoff [Hartree]:          -4.554001178E-10
+
+ SPLINE_INFO| Spline number:                                19
+ SPLINE_INFO| Unique spline number:                         20
+ SPLINE_INFO| Atomic kind numbers:                          11 9
+ SPLINE_INFO| Atomic kind names:                            C2 CT2
+ SPLINE_INFO| Number of spline points:                      2446
+ SPLINE_INFO| Requested accuracy [Hartree]:                 1.000000E-06
+ SPLINE_INFO| Achieved accuracy [Hartree]:                  9.710134E-07
+ SPLINE_INFO| Spline range [bohr]:                          5.065453E-01 3.779452E+01
+ SPLINE_INFO| Spline range used to achieve accuracy [bohr]: 2.070500E+00 3.779452E+01
+ SPLINE_INFO| Spline value at RMIN [Hartree]:               7.504817683E+09
+ SPLINE_INFO| Spline value at RMAX [Hartree]:               0.000000000E+00
+ SPLINE_INFO| Non-bonded energy cutoff [Hartree]:          -1.491514034E-08
+
+ SPLINE_INFO| Spline number:                                20
+ SPLINE_INFO| Unique spline number:                         9
+ SPLINE_INFO| Atomic kind numbers:                          11 10
+ SPLINE_INFO| Atomic kind names:                            C2 H12
+ SPLINE_INFO| Number of spline points:                      2446
+ SPLINE_INFO| Requested accuracy [Hartree]:                 1.000000E-06
+ SPLINE_INFO| Achieved accuracy [Hartree]:                  9.376789E-07
+ SPLINE_INFO| Spline range [bohr]:                          4.045003E-01 3.779452E+01
+ SPLINE_INFO| Spline range used to achieve accuracy [bohr]: 1.648695E+00 3.779452E+01
+ SPLINE_INFO| Spline value at RMIN [Hartree]:               6.643025455E+09
+ SPLINE_INFO| Spline value at RMAX [Hartree]:               0.000000000E+00
+ SPLINE_INFO| Non-bonded energy cutoff [Hartree]:          -2.341838603E-09
+
+ SPLINE_INFO| Spline number:                                21
+ SPLINE_INFO| Unique spline number:                         19
+ SPLINE_INFO| Atomic kind numbers:                          11 11
+ SPLINE_INFO| Atomic kind names:                            C2 C2
+ SPLINE_INFO| Number of spline points:                      2446
+ SPLINE_INFO| Requested accuracy [Hartree]:                 1.000000E-06
+ SPLINE_INFO| Achieved accuracy [Hartree]:                  9.783674E-07
+ SPLINE_INFO| Spline range [bohr]:                          5.027658E-01 3.779452E+01
+ SPLINE_INFO| Spline range used to achieve accuracy [bohr]: 2.048586E+00 3.779452E+01
+ SPLINE_INFO| Spline value at RMIN [Hartree]:               7.260245973E+09
+ SPLINE_INFO| Spline value at RMAX [Hartree]:               0.000000000E+00
+ SPLINE_INFO| Non-bonded energy cutoff [Hartree]:          -1.322415433E-08
+
+ SPLINE_INFO| Spline number:                                22
+ SPLINE_INFO| Unique spline number:                         17
+ SPLINE_INFO| Atomic kind numbers:                          12 4
+ SPLINE_INFO| Atomic kind names:                            O2 HP
+ SPLINE_INFO| Number of spline points:                      2446
+ SPLINE_INFO| Requested accuracy [Hartree]:                 1.000000E-06
+ SPLINE_INFO| Achieved accuracy [Hartree]:                  9.435698E-07
+ SPLINE_INFO| Spline range [bohr]:                          3.515881E-01 3.779452E+01
+ SPLINE_INFO| Spline range used to achieve accuracy [bohr]: 1.432232E+00 3.779452E+01
+ SPLINE_INFO| Spline value at RMIN [Hartree]:               6.265758959E+09
+ SPLINE_INFO| Spline value at RMAX [Hartree]:               0.000000000E+00
+ SPLINE_INFO| Non-bonded energy cutoff [Hartree]:          -1.267286754E-09
+
+ SPLINE_INFO| Spline number:                                23
+ SPLINE_INFO| Unique spline number:                         27
+ SPLINE_INFO| Atomic kind numbers:                          12 7
+ SPLINE_INFO| Atomic kind names:                            O2 N
+ SPLINE_INFO| Number of spline points:                      2446
+ SPLINE_INFO| Requested accuracy [Hartree]:                 1.000000E-06
+ SPLINE_INFO| Achieved accuracy [Hartree]:                  9.234670E-07
+ SPLINE_INFO| Spline range [bohr]:                          4.914275E-01 3.779452E+01
+ SPLINE_INFO| Spline range used to achieve accuracy [bohr]: 1.998069E+00 3.779452E+01
+ SPLINE_INFO| Spline value at RMIN [Hartree]:               7.006652209E+09
+ SPLINE_INFO| Spline value at RMAX [Hartree]:               0.000000000E+00
+ SPLINE_INFO| Non-bonded energy cutoff [Hartree]:          -1.686257902E-08
+
+ SPLINE_INFO| Spline number:                                24
+ SPLINE_INFO| Unique spline number:                         16
+ SPLINE_INFO| Atomic kind numbers:                          12 8
+ SPLINE_INFO| Atomic kind names:                            O2 H2
+ SPLINE_INFO| Number of spline points:                      2936
+ SPLINE_INFO| Requested accuracy [Hartree]:                 1.000000E-06
+ SPLINE_INFO| Achieved accuracy [Hartree]:                  4.714370E-07
+ SPLINE_INFO| Spline range [bohr]:                          2.873376E-01 3.779452E+01
+ SPLINE_INFO| Spline range used to achieve accuracy [bohr]: 1.173857E+00 3.779452E+01
+ SPLINE_INFO| Spline value at RMIN [Hartree]:               6.352710662E+09
+ SPLINE_INFO| Spline value at RMAX [Hartree]:               0.000000000E+00
+ SPLINE_INFO| Non-bonded energy cutoff [Hartree]:          -3.822281065E-10
+
+ SPLINE_INFO| Spline number:                                25
+ SPLINE_INFO| Unique spline number:                         25
+ SPLINE_INFO| Atomic kind numbers:                          12 9
+ SPLINE_INFO| Atomic kind names:                            O2 CT2
+ SPLINE_INFO| Number of spline points:                      2446
+ SPLINE_INFO| Requested accuracy [Hartree]:                 1.000000E-06
+ SPLINE_INFO| Achieved accuracy [Hartree]:                  9.803533E-07
+ SPLINE_INFO| Spline range [bohr]:                          4.914275E-01 3.779452E+01
+ SPLINE_INFO| Spline range used to achieve accuracy [bohr]: 2.007218E+00 3.779452E+01
+ SPLINE_INFO| Spline value at RMIN [Hartree]:               7.480195224E+09
+ SPLINE_INFO| Spline value at RMAX [Hartree]:               0.000000000E+00
+ SPLINE_INFO| Non-bonded energy cutoff [Hartree]:          -1.560509216E-08
+
+ SPLINE_INFO| Spline number:                                26
+ SPLINE_INFO| Unique spline number:                         18
+ SPLINE_INFO| Atomic kind numbers:                          12 10
+ SPLINE_INFO| Atomic kind names:                            O2 H12
+ SPLINE_INFO| Number of spline points:                      2446
+ SPLINE_INFO| Requested accuracy [Hartree]:                 1.000000E-06
+ SPLINE_INFO| Achieved accuracy [Hartree]:                  9.072796E-07
+ SPLINE_INFO| Spline range [bohr]:                          3.893826E-01 3.779452E+01
+ SPLINE_INFO| Spline range used to achieve accuracy [bohr]: 1.582090E+00 3.779452E+01
+ SPLINE_INFO| Spline value at RMIN [Hartree]:               6.332161239E+09
+ SPLINE_INFO| Spline value at RMAX [Hartree]:               0.000000000E+00
+ SPLINE_INFO| Non-bonded energy cutoff [Hartree]:          -2.293756128E-09
+
+ SPLINE_INFO| Spline number:                                27
+ SPLINE_INFO| Unique spline number:                         23
+ SPLINE_INFO| Atomic kind numbers:                          12 11
+ SPLINE_INFO| Atomic kind names:                            O2 C2
+ SPLINE_INFO| Number of spline points:                      2446
+ SPLINE_INFO| Requested accuracy [Hartree]:                 1.000000E-06
+ SPLINE_INFO| Achieved accuracy [Hartree]:                  9.629178E-07
+ SPLINE_INFO| Spline range [bohr]:                          4.876481E-01 3.779452E+01
+ SPLINE_INFO| Spline range used to achieve accuracy [bohr]: 1.988342E+00 3.779452E+01
+ SPLINE_INFO| Spline value at RMIN [Hartree]:               7.255341490E+09
+ SPLINE_INFO| Spline value at RMAX [Hartree]:               0.000000000E+00
+ SPLINE_INFO| Non-bonded energy cutoff [Hartree]:          -1.383588369E-08
+
+ SPLINE_INFO| Spline number:                                28
+ SPLINE_INFO| Unique spline number:                         28
+ SPLINE_INFO| Atomic kind numbers:                          12 12
+ SPLINE_INFO| Atomic kind names:                            O2 O2
+ SPLINE_INFO| Number of spline points:                      2446
+ SPLINE_INFO| Requested accuracy [Hartree]:                 1.000000E-06
+ SPLINE_INFO| Achieved accuracy [Hartree]:                  9.686523E-07
+ SPLINE_INFO| Spline range [bohr]:                          4.725303E-01 3.779452E+01
+ SPLINE_INFO| Spline range used to achieve accuracy [bohr]: 1.921958E+00 3.779452E+01
+ SPLINE_INFO| Spline value at RMIN [Hartree]:               6.919814892E+09
+ SPLINE_INFO| Spline value at RMAX [Hartree]:               0.000000000E+00
+ SPLINE_INFO| Non-bonded energy cutoff [Hartree]:          -1.406552601E-08
+
+ SPLINE_INFO| Number of pair potential splines allocated:   28
+
+ SPLINE_INFO| Number of unique splines computed:            28
+
+ FORCEFIELD| Splining done
+
+ FORCEFIELD| Computing the electrostatic interactions cutoffs
+       atom            1  N3 charge =   0.19020000000000001     
+       atom            2  H11 charge =   0.20560000000000000     
+       atom            3  H11 charge =   0.20560000000000000     
+       atom            4  H11 charge =   0.20560000000000000     
+       atom            5  CT1 charge =   -7.6600000000000001E-002
+       atom            6  HP charge =    8.3900000000000002E-002
+       atom            7  HP charge =    8.3900000000000002E-002
+       atom            8  C1 charge =   0.68369999999999997     
+       atom            9  O charge =  -0.58189999999999997     
+     Mol Kind MOL01 charge =    1.0000000000000000     
+       atom            1  N charge =  -0.44200000000000000     
+       atom            2  H2 charge =   0.29520000000000002     
+       atom            3  CT2 charge =  -0.15090000000000001     
+       atom            4  H12 charge =   0.10349999999999999     
+       atom            5  H12 charge =   0.10349999999999999     
+       atom            6  C2 charge =   0.57709999999999995     
+       atom            7  O2 charge =  -0.74319999999999997     
+       atom            8  O2 charge =  -0.74319999999999997     
+     Mol Kind MOL01 charge =   -1.0000000000000000     
+       atom            1  N3 charge =   0.19020000000000001     
+       atom            2  H11 charge =   0.20560000000000000     
+       atom            3  H11 charge =   0.20560000000000000     
+       atom            4  H11 charge =   0.20560000000000000     
+       atom            5  CT1 charge =   -7.6600000000000001E-002
+       atom            6  HP charge =    8.3900000000000002E-002
+       atom            7  HP charge =    8.3900000000000002E-002
+       atom            8  C1 charge =   0.68369999999999997     
+       atom            9  O charge =  -0.58189999999999997     
+       atom           10  N charge =  -0.44200000000000000     
+       atom           11  H2 charge =   0.29520000000000002     
+       atom           12  CT2 charge =  -0.15090000000000001     
+       atom           13  H12 charge =   0.10349999999999999     
+       atom           14  H12 charge =   0.10349999999999999     
+       atom           15  C2 charge =   0.57709999999999995     
+       atom           16  O2 charge =  -0.74319999999999997     
+       atom           17  O2 charge =  -0.74319999999999997     
+    Total system charge =         0.0000000000
+    Total system mass   =    240847.3180949688
+     Mol(           1 ) Old BOND Count:            9           6
+     5     6
+     5     7
+     1     2
+     1     3
+     1     4
+     8     9
+     5     8
+     1     5
+     8    10
+     Mol(           2 ) Old BOND Count:            7           5
+     3     4
+     3     5
+     1     2
+     6     7
+     6     8
+     3     6
+     1     3
+     Mol(           1 ) Old BEND Count:           17          11
+     7     5     8
+     6     5     7
+     6     5     8
+     4     1     5
+     3     1     4
+     3     1     5
+     2     1     3
+     2     1     4
+     2     1     5
+     1     5     6
+     1     5     7
+     5     8     9
+     1     5     8
+     8    10    11
+     9     8    10
+     8    10    12
+     5     8    10
+     Mol(           2 ) Old BEND Count:           10           7
+     5     3     6
+     4     3     5
+     4     3     6
+     2     1     3
+     1     3     4
+     1     3     5
+     7     6     8
+     3     6     7
+     3     6     8
+     1     3     6
+     Mol(           1 ) Old UB Count:           17          11
+     7     5     8
+     6     5     7
+     6     5     8
+     4     1     5
+     3     1     4
+     3     1     5
+     2     1     3
+     2     1     4
+     2     1     5
+     1     5     6
+     1     5     7
+     5     8     9
+     1     5     8
+     8    10    11
+     9     8    10
+     8    10    12
+     5     8    10
+     Mol(           1 ) New UB Count:            0           0
+
+     Mol(           2 ) Old UB Count:           10           7
+     5     3     6
+     4     3     5
+     4     3     6
+     2     1     3
+     1     3     4
+     1     3     5
+     7     6     8
+     3     6     7
+     3     6     8
+     1     3     6
+     Mol(           2 ) New UB Count:            0           0
+
+     Mol(           1 ) Old TORSION Count:           24          14
+     7     5     8     9
+     6     5     8     9
+     4     1     5     6
+     4     1     5     7
+     4     1     5     8
+     3     1     5     6
+     3     1     5     7
+     3     1     5     8
+     2     1     5     6
+     2     1     5     7
+     2     1     5     8
+     1     5     8     9
+     9     8    10    11
+     8    10    12    13
+     8    10    12    14
+     7     5     8    10
+     6     5     8    10
+     5     8    10    11
+     8    12    10    11
+     9     8    10    12
+     8    10    12    15
+     5     8    10    12
+     1     5     8    10
+     5    10     8     9
+     Mol(           2 ) Old TORSION Count:           10           5
+     5     3     6     7
+     5     3     6     8
+     4     3     6     7
+     4     3     6     8
+     2     1     3     4
+     2     1     3     5
+     2     1     3     6
+     1     3     6     7
+     1     3     6     8
+     3     7     6     8
+
+ *******************************************************************************
+ **                  MAPPING OF BAND REPLICA TO REPLICA ENV                   **
+ *******************************************************************************
+ ** Replica Env Nr.:      5    working on the following BAND replicas         **
+ **                                                                           **
+ ** Band Replica   Nr.:      6 Output available on file: 2gly_B-NEB-BAND6.out **
+ **                                                                           **
+ *******************************************************************************
+
+
+  **** **** ******  **  PROGRAM ENDED AT                 2026-04-22 11:54:41.686
+ ***** ** ***  *** **   PROGRAM RAN ON                                      n164
+ **    ****   ******    PROGRAM RAN BY                                     lab07
+ ***** **    ** ** **   PROGRAM PROCESS ID                                  9592
+  **** **  *******  **  PROGRAM STOPPED IN /DATA/lab07/hglee/cp2k_agent/test/lev
+                                           el7

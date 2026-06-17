@@ -4,7 +4,7 @@
 
 이 기능은 `app/features/benchmark/` 아래에 도메인별로 구현된다: HTTP 표면(엔드포인트 핸들러)은 `router.py`, 벤치마크 오케스트레이션 로직(`BenchmarkManager` 등)은 `service.py`, 기능 전용 요청 모델은 `schemas.py`에 둔다. cross-feature 모델(`AtomInfo`/`PlanStep`/`GeneratedFile`/`JobStatus` 등)은 `app/schemas/common.py`에, 자가치유·물리 규칙·옵션 병합 같은 공유 엔진은 `app/shared/*`에 위치한다.
 
-> **한 줄 책임:** `test/level1~12`의 공식 CIF/INP를 진실값(ground truth)으로 삼아 **CIF 분석 → AI 플랜 → INP 빌드 → SGE(qsub) 또는 로컬 실행 → 자가치유 재시도(최대 3회) → 공식 결과 대비 에너지/물성 오차 비교**를 12단계로 자동 수행하고, 실시간 진행상태와 레벨별 정확도 리포트를 제공한다.
+> **한 줄 책임:** `backend/test/level1~12`의 공식 CIF/INP를 진실값(ground truth)으로 삼아 **CIF 분석 → AI 플랜 → INP 빌드 → SGE(SSH, `app/core/sge.py`) 제출 → 자가치유 재시도(최대 3회) → 공식 결과 대비 에너지/물성 오차 비교**를 12단계로 자동 수행하고, 실시간 진행상태와 레벨별 정확도 리포트를 제공한다. (`USE_SGE=0`/클러스터 부재 시 공식 결과 폴백으로 흐름 시연.)
 
 | 항목 | 내용 |
 | --- | --- |
@@ -213,7 +213,7 @@
 **디스크 산출물(코드 객체가 아닌 파일 포맷 약속):** 본 기능은 실행 중 아래를 기록한다. 리포트 기능(f5)이 동일 포맷을 소비할 수 있으나, **벤치마크 경로는 자체 비교 로직(`_extract_energy`/`_extract_target_property`)으로 자급자족**한다.
 
 ```
-<root>/simulations/benchmark_{YYYYmmdd_HHMMSS}/
+backend/simulations/benchmark_{YYYYmmdd_HHMMSS}/
 ├── level{N}/
 │   ├── calculation.inp          # build_full_inp 렌더 결과
 │   ├── run.sh                    # SGE_TEMPLATE.format(...) 결과 (chmod 0o755)
@@ -350,7 +350,7 @@
 
 | 심볼 | 호출 방식 | 용도 |
 | --- | --- | --- |
-| `SGE_TEMPLATE` | `.format(job_name=..., inp_filename="calculation.inp", out_filename="calculation.out")` | qsub용 `run.sh` 템플릿 문자열. **본 기능은 `app/features/jobs/service.py`의 `start_job_suite`를 쓰지 않고 직접 qsub/로컬 실행한다.** |
+| `SGE_TEMPLATE` | `.format(job_name=..., inp=...|inp_filename="calculation.inp", out=...|out_filename="calculation.out")` | `run.sh` 템플릿. **본 기능은 `app/features/jobs/service.py`의 `start_job_suite`를 쓰지 않고, `SGEClient`로 직접 SFTP 업로드+`qsub`+`qstat`+회수한다**(f4와 동일 SSH 경로). |
 
 ### `app/schemas/common.py` · `app/features/benchmark/schemas.py`
 
@@ -375,10 +375,10 @@
 | **환경변수 `CLAUDE_API_KEY`** | 필수 | `app/features/plan/service.py`/`app/shared/self_healing.py`(공통적으로 `app/core/llm.py` 경유)가 `os.getenv`로 사용. `.env`에 보관(값은 절대 커밋/문서화 금지). 미설정 시 플랜/치유 단계에서 실패. |
 | **환경변수 `ANTHROPIC_MODEL`** | 선택 | 모델 ID 오버라이드(미설정 시 코드 기본값). |
 | **환경변수 `APP_HOST` / `APP_PORT`** | 선택 | 서버 바인딩(기본 `0.0.0.0:8000`). |
-| **SGE / `qsub` · `qstat`** | 필수(권장) | `subprocess.run(["qsub","run.sh"])`로 제출, `subprocess.run(["qstat"])`로 생존 확인. PATH에 두 바이너리 필요. |
-| **로컬 폴백 실행 `cp2k.popt`** | 폴백 | qsub 실패/부재(`FileNotFoundError`) 시 `nohup cp2k.popt -i calculation.inp > calculation.out 2>&1 & echo $!`. **Unix `nohup`/셸 가정 → Windows 미지원.** PATH에 `cp2k.popt` 필요. |
-| **파일시스템 — 입력** | 필수 | `<root>/test/level{N}/L{N}_Official.cif` 및 `*Official*.inp`, 공식 결과 `*.out`/`*.o2551`/`*.ener`/`*.bader`/`-r-0.out`. `<root>` = 모듈 상위의 상위 디렉토리. |
-| **파일시스템 — 출력** | 필수 | `<root>/simulations/benchmark_{YYYYmmdd_HHMMSS}/level{N}/` 및 `level{N}_retry_{n}/`. |
+| **SGE via SSH (`app/core/sge.py` `SGEClient`)** | 필수(권장) | f4와 동일 경로 — paramiko SSH로 원격에 `calculation.inp`/`run.sh` SFTP 업로드 → `qsub` 제출 → `qstat` 생존 확인 → `calculation.out` 회수. (reference의 `subprocess.run(["qsub"])`/`cp2k.popt` 로컬 실행을 SSH로 통일.) 자격증명은 config만, 비노출. |
+| **목 폴백 (`USE_SGE=0` / SSH 실패)** | 폴백 | 클러스터 없으면 에이전트 inp는 실제 생성하되 실행 불가 → **공식 `calculation.out`을 에이전트 결과로 사용**(diff≈0%→SUCCESS)해 흐름 시연(로그에 폴백 명시). Windows 로컬에서도 동작. |
+| **파일시스템 — 입력** | 필수 | `backend/test/level{N}/L{N}_Official.cif` 및 `*Official*.inp`, 공식 결과 `calculation.out`(+`*.ener`/`*.hirshfeld`/`-r-0.out` 등 물성 파일). `backend/test`는 `_BACKEND_DIR/test`(be/05 orchestrator와 동일 패턴). |
+| **파일시스템 — 출력** | 필수 | `backend/simulations/benchmark_{YYYYmmdd_HHMMSS}/level{N}/` 및 `level{N}_retry_{n}/`. |
 | **`os.chmod(run.sh, 0o755)`** | POSIX | Windows에서는 무의미(무시됨). |
 | **SGE_TEMPLATE 내장 환경** | 클러스터 고정 | 큐 `gp3`, PE `16cpu 16`, `CP2K_ROOT=/share/cp2k-2026.1_mkl`, `CP2K_DATA_DIR=/share/cp2k-2026.1_mkl/data`, venv `/DATA/lab07/hglee/cp2k_agent/venv`, Intel oneAPI `setvars.sh` (정의 위치: `app/core/sge.py`). |
 | **타임아웃** | 고정 | 폴링 최대 **300회 × 5초 ≈ 25분**/레벨. `qstat` 미발견 유예 **6회(30초)**. |
@@ -400,9 +400,9 @@
 
 **실행 인프라 목업(클러스터 없이):**
 
-- `qsub` 부재 시 자동으로 로컬 `cp2k.popt` 폴백을 타므로, **`cp2k.popt`를 가짜 스크립트로 대체**한다. 입력 `calculation.inp`를 읽어 `calculation.out`에 `ENERGY| Total FORCE_EVAL ( QS ) energy [hartree] -123.456` 한 줄 + 마지막에 `PROGRAM ENDED` 를 써넣으면 폴링이 성공으로 종료된다.
+- `USE_SGE=0`(또는 SSH 실패) 시 **목 폴백**: 에이전트 inp는 실제 생성하되 실행은 못 하므로 **공식 `calculation.out`을 에이전트 결과로 사용**(diff≈0%→SUCCESS)해 폴링/비교가 끝까지 돈다. (별도 가짜 `cp2k` 바이너리 불필요.)
 - **공식 진실값 목업:** `test/level{N}/`에 작은 `L{N}_Official.cif` 와 `*Official*.inp`, 그리고 같은 `ENERGY|` 라인을 가진 공식 `.out`을 두면 비교 로직(`_extract_energy`)이 동작해 `diff`가 산출된다.
-- Windows 개발 시 `nohup`/셸 폴백이 동작하지 않으므로, 로컬 검증은 **WSL/Linux 컨테이너** 또는 위 "가짜 `cp2k.popt`"를 cross-platform 파이썬 스크립트로 PATH에 올리는 방식 권장.
+- 제출은 `SGEClient`(SSH)로 원격 클러스터에서 실행되므로 백엔드 호스트 OS(Windows 포함)와 무관하다. 클러스터가 없으면 위 `USE_SGE=0` 목 폴백으로 전 구간이 Windows에서도 돈다.
 
 **프런트엔드 단독 개발:** `GET /api/benchmark/status`의 응답 예시를 정적 JSON으로 고정해 폴링 UI(12개 레벨 카드, 로그 콘솔, status/diff 컬러링)를 백엔드 없이 완성할 수 있다. `status="error"` 거절 케이스와 `Skipped`/`FAILURE`/`Recovering...` 상태도 목업에 포함할 것.
 
@@ -415,7 +415,7 @@
 - [ ] `L{N}_Official.cif` 부재 시 해당 레벨이 `Skipped`로 처리되고 루프가 계속된다.
 - [ ] 비교 판정이 명세대로 동작: 오차율 < 1.0% **또는** 에너지가 더 낮으면 `SUCCESS`, 그 외 계산 성공은 `INCORRECT`, 추출/타임아웃/예외는 `FAILURE`.
 - [ ] `reports[i].message`에 물성 라벨·오차율·치유 횟수(`Healed Nx via <diag>`)가 일관 포맷으로 채워진다.
-- [ ] 폴링 타임아웃(300×5초)·`qstat` 유예(6회)가 동작하고, qsub 부재 시 로컬 `cp2k.popt` 폴백으로 자동 전환된다.
+- [ ] 폴링 타임아웃·`qstat` 유예가 동작하고, `USE_SGE=0`/SSH 실패 시 공식결과 목 폴백으로 자동 전환된다.
 - [ ] `logs`가 실시간 append되고 단계 전환 시 `logs_pos`가 0으로 리셋된다.
 - [ ] 루프 종료 시 `status`가 `Finished`로 안착한다(치명 예외 포함).
 - [ ] 위 4개 stub만으로 상위 기능(f1/f2/f3) 없이 전 구간 통과가 재현된다.

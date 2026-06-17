@@ -19,7 +19,7 @@
 | **f3 INP** | ✅ REAL (명세 재구현) | **`schema_engine`(cp2k_input.xml)로 스키마 인식 렌더 + 3-pass `validate_and_correct`**. be/04 명세대로 재구현(코드 복사 아님, 문자열 템플릿 아님). |
 | **f4 제출/모니터** | ✅ REAL (SSH/SGE) | be/05 명세대로 orchestrator+self_healing **재구현**(진단→KB heal→AI heal→재시도≤3, 좌표 체이닝). SGE는 `app/core/sge.py` SSH로. **다중-CIF는 구조별 독립 자가치유**. `USE_SGE=0` 시 목. |
 | **f5 리포트** | ✅ REAL | **실제 `.out` 파싱** + Anthropic 리포트 프롬프트 → 마크다운 리포트. 결과 없을 때만 샘플 폴백. **← 데모 하이라이트** |
-| **f6 벤치마크** | 🔴 MOCK | 12레벨 가짜 진행. (시간 남으면) |
+| **f6 벤치마크** | ✅ REAL (명세 재구현) | `backend/test/level1~12` 공식 결과 대비 12레벨 자동 검증(CIF→플랜→INP→SSH제출→치유→오차비교). be/07 명세대로 재구현. `USE_SGE=0`이면 공식결과 폴백으로 흐름 시연. **데이터 `backend/test/` 반입 필요.** |
 
 > **f4 실제 실행 전제**: `.env`에 `USE_SGE=1` + `CLUSTER_*`/`CP2K_*` 설정(값은 `.env`만, **절대 커밋 금지**). 미설정/`USE_SGE=0`이면 목 폴백으로 흐름은 그대로 시연된다.
 
@@ -28,5 +28,5 @@
 = "CIF 올리면 AI가 계획·입력·해석"하는 풀 흐름이 실제로 작동.
 
 ## 명시적으로 "안 하는 것" (MVP 범위 밖)
-f6 벤치마크 **실제 실행**(목 유지). (f3 inp·f4 자가치유·schema_engine·self_healing·physics_rules는 **be/04·be/05 명세대로 원래 로직을 재구현 — 더 이상 단순화 아님**. 단 코드 복사는 안 함.)
-→ ⚠️ f3/f4 동작엔 **데이터 파일** `cp2k_input.xml`(+`.cache.pkl`)·`basis_map.json`·`healing_knowledge.json`이 backend(`app/shared/`)에 있어야 한다(코드는 명세로 재구현, 데이터만 반입).
+(f3 inp·f4 자가치유·f6 벤치마크·schema_engine·self_healing·physics_rules는 **be/04·be/05·be/07 명세대로 원래 로직을 재구현 — 더 이상 단순화 아님**. 단 코드 복사는 안 함.) — 더 이상 목으로 두는 핵심 기능은 없다.
+→ ⚠️ f3/f4 동작엔 **데이터 파일** `cp2k_input.xml`(+`.cache.pkl`)·`basis_map.json`·`healing_knowledge.json`이 backend(`app/shared/`)에, **f6 동작엔 `backend/test/level1~12/`(공식 CIF·INP·calculation.out)** 가 있어야 한다(코드는 명세로 재구현, 데이터만 반입).
