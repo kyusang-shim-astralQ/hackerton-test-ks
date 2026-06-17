@@ -27,13 +27,18 @@
 **A-3. `_recursive_govern(options, current_path, current_dic, logs, tokens, global_root)`** — 각 키:
 - `@CHILDREN`/`@PARAM`/`SECTION_PARAMETERS`/`_EXIST`는 메타로 통과. `ROOT` 키는 펼침.
 - 키에 공백 있으면 `k, param` 분리(예 `KIND H` → k=KIND, param=H).
-- **섹션/키워드 판정**: 값이 dict면 섹션. 아니면 현재 경로 스키마에 keyword로 있으면 키워드, 없고 `sections`에 있으면 섹션.
+- **섹션/키워드 판정(★ 한 줄 `isinstance(v,dict)` 금지 — XC_FUNCTIONAL 버그의 근본 원인)**: 아래 **3-규칙**으로 `is_section`을 결정한다 — ① 값이 **dict** → 섹션. ② dict 아니어도 `fuzzy_correct(k,current_path)` 정식명이 **현재 경로 keywords에 존재** → 키워드. ③ ①②가 아니고 정식명이 **`self.sections`에 존재** → **섹션(문자열 값을 가진 섹션)** 으로 분류해 섹션 경로(`_place_section`)로 라우팅한다. (예: `XC_FUNCTIONAL`은 `sections`에 있으므로 값이 `"PBE"` 문자열이어도 **반드시 섹션**으로 분류해야 한다. `isinstance` 한 줄로만 판정하면 문자열 값 섹션이 키워드로 새서 `&XC` 안에 `XC_FUNCTIONAL PBE`(`&` 없는 키워드)로 렌더 → CP2K `found an unknown keyword XC_FUNCTIONAL in section XC`로 거부된다.)
 - `fuzzy_correct(k, current_path)`(alias_map → 현재경로 keyword/sub_section/sections 확인)로 정식명. 없으면: `@`로 시작(전처리 지시문)이면 보존; dict면 `PRUNE: Unknown section`(force_sync면 보존); 아니면 `PRUNE: Unknown`(force_sync면 보존).
 - **좌표 가드(★ `return`)**: dict 아닌데 `str(k).split()`이 4토큰↑이고 `parts[1:4]`가 모두 float면 좌표로 오인 → `[REJECT]` 로그 후 **`return`**(이 dict의 나머지 형제 키 처리까지 중단 — `continue` 아님). 바레 `KIND`(param 없음)도 `[REJECT]` 후 **`return`**.
 - `_find_best_parent(name, current_path, is_section)`: `_is_valid_at_path`면 현재 경로 유지(맥락 우선); 아니면 forward에서 그 이름 가진 경로 수집 → `_score_path`(현재 경로와 동일 prefix 성분 수, 첫 불일치에서 중단) 내림차순 1등. 그 경로로 `target_root`를 `setdefault`하며 내려감.
 - **repeats/KIND `actual_key`**: `repeats = forward.get(current_path+(target_name,),{}).get('repeats')`. `repeats or target_name=="KIND"`면 — `param` 있으면 `f"{target_name} {param.upper()}"`(★ param UPPER); elif raw 키에 `_DUPL_` 있으면 `f"{target_name}_DUPL_{raw.split('_DUPL_')[1]}"`; else **이미 `{target_name}_DUPL_`로 시작하는 형제가 있으면 `[PRUNE] redundant bare section` 후 `continue`**, 아니면 `target_name`. 아니면 `actual_key=target_name`.
-- 섹션이면: 값이 문자열이면 dict로 — `"SECTION_PARAMETERS "` 접두 제거 후, `target_name=="XC_FUNCTIONAL"`이고 값(UPPER)이 `["PBE","BLYP","PADE","LDA","GPW","TPSS","B3LYP"]` 중 하나면 `{값UPPER:{}}`, 값 있으면 `{'@param':값}`, 비면 `{'@children':[]}`. `SECTION_PARAMETERS`→`@param` 승격(`@param`/`@children`/`_EXIST`를 소문자 키로 동기화, 빈 자리에만 덮어쓰기). 재귀.
+- 섹션인데 값이 문자열(또는 비-dict)이면 dict로 **승격**: `"SECTION_PARAMETERS "` 접두 제거 후 **`{'@param': 값}`**(렌더 시 `&NAME 값`), 빈 값이면 `{'@children':[]}`. ★ **XC_FUNCTIONAL functional 화이트리스트(`PBE/BLYP/PADE/…`)는 제거** — `PBE0`·`HSE06`·`SCAN`·`B3LYP` 등 **어떤 functional 이름이 와도 `@param`으로 승격**되어 `&XC_FUNCTIONAL <이름> … &END XC_FUNCTIONAL`(섹션)으로 렌더돼야 한다(특정 목록에 없다고 키워드로 새는 일 0). `SECTION_PARAMETERS`→`@param` 승격(`@param`/`@children`/`_EXIST`를 소문자 키로 동기화, 빈 자리에만 덮어쓰기). 재귀.
 - 키워드면: `repeats`면 list 누적, 아니면 값 설정(기존이 dict면 `target_val[k_up]=v`로 중첩).
+
+> ### ★ 버그 수정: `&XC_FUNCTIONAL`이 키워드로 렌더되는 문제 (CP2K `found an unknown keyword XC_FUNCTIONAL in section XC`)
+> **증상**: f2 플랜이 `inp_options`에 `"FORCE_EVAL/DFT/XC/XC_FUNCTIONAL PBE"`(키워드-값 형태)를 내면, 생성 `.inp`가 `&XC` 안에 `XC_FUNCTIONAL PBE`(`&` 없는 키워드)로 렌더돼 CP2K가 거부. 올바른 형태는 `&XC_FUNCTIONAL PBE … &END XC_FUNCTIONAL`(섹션, PBE는 섹션 파라미터).
+> **근본 원인**: `_recursive_govern`의 섹션/키워드 판정이 **`isinstance(v,dict)` 단독**이면 문자열 값으로 들어온 "스키마상 섹션"(XC_FUNCTIONAL)을 키워드로 오분류한다. `_enforce_physics`의 XC 교정(A-4 §5)은 `functional` 인자가 `build_full_inp`에 전달될 때만 동작하므로, **플랜 경로(top-level `functional` 미전달)에선 보호가 뚫린다.**
+> **수정(반드시 구현)**: ① 위 A-3 **3-규칙 판정**으로 `XC_FUNCTIONAL`을 sections 기준 섹션으로 분류. ② 문자열 값은 **`@param`으로 승격**(화이트리스트 없이 모든 functional). ③ A-4 §5 XC 교정은 그대로 두되, **그것에 의존하지 않고 ①②만으로** `functional` 미전달이어도 `&XC_FUNCTIONAL`이 항상 섹션으로 렌더돼야 한다.
 
 **A-4. `_enforce_physics(root, mandatory, logs)`** — 물리 강제(전체 `try/except`로 감싸 예외 시 로그만 남기고 통과). `set_if_missing(d,k,v)` = **`(k 없음) 또는 (force_sync and v is not None)`이고 `v is not None`일 때만 기록**(★ force_sync 아니면 **기존값을 덮지 않고 빈 자리만** 채움). 순서:
 1. `GLOBAL.PROJECT_NAME = 'CP2K_AGENT_FORCE_WRITE_V1'`(**무조건 대입**). `GLOBAL.RUN_TYPE = set_if_missing(run_type.upper())`(기본 ENERGY).
@@ -83,3 +88,5 @@
 - [ ] 플랜의 경로형 옵션이 **스키마의 올바른 `&SECTION` 위치로 재배치**되고, COORD/CELL/KIND가 atom_info에서 채워진 **유효 `.inp`**.
 - [ ] 다중-CIF면 구조별×스텝별 `.inp` 모두 생성.
 - [ ] OT/DIAGONALIZATION·BASIS/POTENTIAL·CUTOFF/EPS_SCF가 _enforce_physics로 강제됨.
+- [ ] **`build_full_inp(["FORCE_EVAL/DFT/XC/XC_FUNCTIONAL PBE"], atom_info, functional=None …)`(★ top-level functional 미전달)** → 출력에 `&XC_FUNCTIONAL PBE`/`&END XC_FUNCTIONAL`(섹션)이 있고 `XC_FUNCTIONAL PBE`(`&` 없는 키워드 줄)는 **없어야** 한다.
+- [ ] functional 이름이 화이트리스트 밖(`PBE0`/`HSE06` 등)이어도 `&XC_FUNCTIONAL <이름>` 섹션으로 렌더된다. 문자열 값으로 들어온 다른 스키마 섹션도 키워드로 새지 않는다.

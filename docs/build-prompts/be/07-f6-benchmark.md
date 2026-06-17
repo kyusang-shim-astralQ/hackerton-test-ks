@@ -53,6 +53,14 @@
 - `SGEClient`로 원격 `{CLUSTER_REMOTE_ROOT}/benchmark_{ts}/level{N}/`에 `calculation.inp`+`run.sh` SFTP 업로드 → `qsub` → job_id 파싱 → `qstat` 폴링(등록 지연 유예 + `calculation.out`의 `PROGRAM ENDED`/`ABORT`/`Segmentation`/`error` 감지) → 완료 시 `calculation.out`(및 `.ener`/`.pdos`/`.hirshfeld` 등 물성 파일) 로컬 `job_dir`로 회수. 폴링 타임아웃은 레벨당 충분히(예: 5초×수백회). 자격증명은 config만, 로그 비노출.
 - run.sh는 be/05 `SGE_TEMPLATE` 그대로(`-pe {CLUSTER_PE}` 통째, `mpiexec -n {CLUSTER_MPI_RANKS}`; inp/out만 calculation.inp/out).
 
+### E-2. ★ 결과 무결성 검증 + 이벤트 루프 비블로킹 (버그 수정 — 빈 .out / 서버 멈춤)
+> reference엔 없던 부분(우리가 SSH+async로 바꾸며 생긴 새 버그). 반드시 구현:
+- **증상 A (빈 결과)**: 실제 SGE에서 클러스터 잡이 출력을 못 만들면(잡 즉사 등), 회수 로직이 빈 원격 `calculation.out`을 **0바이트로 내려받고 예외를 `except: pass`로 삼켜** 결과 디렉토리에 0바이트 파일이 조용히 남고 비교가 무의미해진다. (CLAUDE.md §9 `CP2K_VENV` 등 미설정 시 잡 즉사.)
+- **수정 1 — 빈/무효 출력 표면화**: 제출·회수 후 `calculation.out`이 (a) 부재 / (b) 0바이트 / (c) 완료 마커(`PROGRAM ENDED` 또는 `ENERGY| Total FORCE_EVAL`) 없음이면 그 레벨을 **`FAILURE`** 로 기록하고 메시지에 원인 명시 — 예 `"[{property}] 클러스터 잡이 출력을 생성하지 못함 — run.sh/CP2K 환경(CP2K_VENV·CP2K_*) 확인"`. **빈 파일을 정상처럼 비교에 넘기지 않는다.** 회수/다운로드 예외도 **무음 삼킴 금지 — 로그에 사유 기록**. (단, 아래 **MOCK 폴백**(공식 `calculation.out` 복사)은 의도된 full 결과이므로 이 검증의 **예외**.)
+- **증상 B (서버 멈춤)**: 12레벨 루프가 async 백그라운드 태스크 안에서 **동기 `time.sleep` 폴링·`paramiko`·`shutil`을 `await` 없이 직접 호출**해 이벤트 루프를 막는다 → 런 도중 `GET /api/benchmark/status`(프런트 2~3초 폴링)·`/health`가 타임아웃돼 대시보드가 멈춘다.
+- **수정 2 — 이벤트 루프 비블로킹**: 폴링 대기는 **`await asyncio.sleep(...)`**, 블로킹 I/O(SGE `qsub`/`qstat`/SFTP, ASE 분석, `build_full_inp`, `shutil` 복사)는 **`await asyncio.to_thread(...)`**로 감싼다. 런 도중에도 `/api/benchmark/status`·`/health`가 **즉시 응답**해야 한다(`results`는 진행에 따라 갱신).
+- **수정 3**: 빈 출력/치유/폴백 사유가 `logs`에 실시간으로 남아 대시보드에 보여야 한다.
+
 ### MOCK 폴백 (USE_SGE=0 / SSH 실패 — 클러스터 없이 시연)
 에이전트 inp는 **실제로 생성**(AI 플랜→스키마 빌드 시연)하되, 실행은 불가하므로 **공식 `calculation.out`을 에이전트 결과로 사용**해 비교(diff≈0% → `SUCCESS`)하고 흐름을 끝까지 시연한다. 로그에 "목 폴백(공식 결과 사용)"임을 명시한다. (프런트 `NEXT_PUBLIC_MOCK=1`이면 프런트가 자체 가짜 스트림을 그림 — fe/07.)
 
@@ -72,3 +80,6 @@
 - [ ] 제출이 **SSH/SGE(`app/core/sge.py`)** 로(f4와 일관, `subprocess` 아님). `USE_SGE=0`이면 공식결과 폴백으로 흐름 시연.
 - [ ] `L{N}_Official.cif` 부재 레벨은 `Skipped`, 루프 계속. 종료 시 `status="Finished"`.
 - [ ] **`POST /api/benchmark/stop`(기동/중지)**: 호출 시 `stop_requested=True` → 루프가 레벨 경계·폴링 중 확인해 빠져나오고, 현재 클러스터 job을 `qdel`로 종료, 로그에 중지 표시. (프런트 STOP 버튼이 이걸 호출.)
+- [ ] **빈 결과 무결성(E-2)**: 실제 SGE에서 `calculation.out`이 0바이트/부재/완료마커 없음이면 그 레벨이 **FAILURE**(원인 메시지 포함)로 기록되고, 빈 파일이 비교로 넘어가지 않는다. 회수/다운로드 예외는 로그에 남긴다.
+- [ ] **비블로킹(E-2)**: 벤치마크 런이 도는 동안 `GET /api/benchmark/status`·`GET /health`가 블로킹 없이 **2초 내 응답**한다(폴링 `await asyncio.sleep`, 블로킹 I/O `await asyncio.to_thread`).
+- [ ] **MOCK 폴백은 무결성 검증의 예외** — 공식 결과 복사 → `SUCCESS` 흐름이 그대로 동작한다.
